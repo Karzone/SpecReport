@@ -21,6 +21,16 @@ public static class ViewModelBuilder
         var assets = new AssetWriter(spool, options);
         var scenarioId = 0;
 
+        var allSteps = scenarios.SelectMany(s => s.Outcome?.Steps ?? []).ToList();
+        var allEvidence = allSteps.SelectMany(s => s.Evidence)
+            .Concat(scenarios.SelectMany(s => s.Outcome?.OutsideStepEvidence ?? []))
+            .ToList();
+
+        var slowest = scenarios
+            .Where(s => s.Outcome is not null)
+            .OrderByDescending(s => s.Outcome!.Duration)
+            .FirstOrDefault();
+
         return new ReportViewModel
         {
             Title = options.Title ?? DefaultTitle(run),
@@ -30,6 +40,14 @@ public static class ViewModelBuilder
             Counts = counts,
             TotalScenarios = scenarios.Count,
             PassRate = scenarios.Count == 0 ? 0 : Math.Round(passed * 100.0 / scenarios.Count, 1),
+
+            TotalSteps = allSteps.Count(s => s.Kind == StepKind.Gherkin),
+            FeatureCount = run.Features.Count,
+            FlakyCount = scenarios.Count(s => s.IsFlakyWithinRun),
+            ScreenshotCount = allEvidence.Count(e => e.Kind == EvidenceKind.Screenshot),
+            HttpExchangeCount = allEvidence.Count(e => e.Kind == EvidenceKind.HttpExchange),
+            SlowestScenario = slowest?.Name,
+            SlowestScenarioMs = slowest?.Outcome?.Duration.TotalMilliseconds ?? 0,
             Metadata = BuildMetadata(run.Metadata),
             DegradationBanner = run.Diagnostics.Summary(),
             AllTags = scenarios.SelectMany(s => s.Tags).Distinct(StringComparer.Ordinal)

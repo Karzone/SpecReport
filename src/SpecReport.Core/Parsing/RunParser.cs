@@ -408,6 +408,32 @@ public sealed class RunParser(AttachmentSpool spool)
     private static string? Empty(string? value) =>
         string.IsNullOrEmpty(value) ? null : value;
 
+    /// <summary>
+    /// Reads the step ordinal SpecReport.Capture encodes into screenshot file names, as
+    /// <c>specreport-step-0004-….jpg</c>.
+    ///
+    /// The file name is the only channel available: Reqnroll stamps an attachment added from an
+    /// [AfterStep] hook with the HOOK's step id rather than the Gherkin step's (api-notes §10),
+    /// and unlike an http/1 payload an image has nowhere inside it to carry an index. Without
+    /// this, a screenshot from a failing step renders against step 1.
+    ///
+    /// Any other producer's file names simply do not match, and fall through to the positional
+    /// fallback.
+    /// </summary>
+    private const string StepOrdinalPrefix = "specreport-step-";
+
+    private static int? StepOrdinalFromFileName(string? fileName)
+    {
+        if (fileName is null || !fileName.StartsWith(StepOrdinalPrefix, StringComparison.Ordinal))
+            return null;
+
+        var rest = fileName.AsSpan(StepOrdinalPrefix.Length);
+        var end = rest.IndexOf('-');
+        if (end <= 0) return null;
+
+        return int.TryParse(rest[..end], out var ordinal) && ordinal >= 0 ? ordinal : null;
+    }
+
     private static RunMetadata WithCustom(RunMetadata source, Dictionary<string, string> custom) =>
         new()
         {
@@ -502,7 +528,13 @@ public sealed class RunParser(AttachmentSpool spool)
         {
             foreach (var item in items)
             {
-                var target = item.Http is { StepIndex: >= 0 } http ? http.StepIndex : lastGherkinOrdinal;
+                // Ordinal sources, in order of reliability: an http/1 payload's own stepIndex,
+                // then a screenshot's file name (Capture encodes it there because a JPEG has
+                // nowhere else to put it), then the last Gherkin step seen.
+                var target = item.Http is { StepIndex: >= 0 } http
+                    ? http.StepIndex
+                    : StepOrdinalFromFileName(item.FileName) ?? lastGherkinOrdinal;
+
                 if (target < 0) target = 0;
 
                 if (!rehomed.TryGetValue(target, out var list)) rehomed[target] = list = [];

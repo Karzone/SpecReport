@@ -55,15 +55,21 @@ public sealed class CaptureHooks
         _capture.Buffer.EnterStep(_capture.NextStepIndex(), CurrentStepText());
     }
 
-    private string? CurrentStepText()
+    private string? CurrentStepText() => SafeStepContext()?.StepInfo?.Text;
+
+    /// <summary>
+    /// ScenarioStepContext throws outside a step and can throw on a disposed container. Step
+    /// text and failure detection are both reporting concerns - neither is worth failing a
+    /// consumer's run over.
+    /// </summary>
+    private ScenarioStepContext? SafeStepContext()
     {
         try
         {
-            return _scenario.StepContext?.StepInfo?.Text;
+            return _scenario.StepContext;
         }
         catch
         {
-            // Step text is a nicety for the report; never fail a consumer's run over it.
             return null;
         }
     }
@@ -95,7 +101,12 @@ public sealed class CaptureHooks
         var options = _capture.Options.Screenshots;
         if (options.Mode == ScreenshotMode.Off) return;
 
-        var failed = _scenario.StepContext?.Status == ScenarioExecutionStatus.TestError;
+        // StepError is the unambiguous signal: the exception THIS step threw. Status was tried
+        // first and fired on a passing step - measured, not assumed - so precision matters more
+        // than it looks.
+        var stepContext = SafeStepContext();
+        var failed = stepContext?.StepError is not null;
+
         if (options.Mode == ScreenshotMode.OnFailure && !failed) return;
 
         var result = await ScreenshotResult
@@ -104,6 +115,13 @@ public sealed class CaptureHooks
 
         if (result.Bytes is { } bytes)
         {
+            // The step ordinal goes in the FILE NAME, which Reqnroll copies into the attachment
+            // envelope verbatim.
+            //
+            // It cannot go anywhere else: an attachment added from [AfterStep] is stamped with
+            // the AFTER_TEST_STEP hook's id, not the step's (api-notes §10), and unlike an
+            // http/1 payload a JPEG has nowhere to carry an index. Without this the screenshot
+            // from a failing step renders against step 1 - measured, not theorised.
             _output.AddAttachment(WriteBytes(bytes, options.FileExtension));
             return;
         }
@@ -146,13 +164,29 @@ public sealed class CaptureHooks
         return path;
     }
 
+    /// <summary>
+    /// Writes a screenshot whose file name carries the Gherkin step ordinal, in the form
+    /// <c>specreport-step-0004-…</c>. <see cref="StepOrdinalPrefix"/> documents the contract;
+    /// SpecReport.Core parses it back when placing evidence.
+    /// </summary>
     private string WriteBytes(byte[] bytes, string extension)
     {
-        var name = "shot-" + System.Guid.NewGuid().ToString("N").Substring(0, 8) + extension;
-        var path = Path.Combine(ScratchDirectory(), name);
+        var ordinal = _capture.CurrentStepIndex.ToString("D4");
+        var unique = System.Guid.NewGuid().ToString("N").Substring(0, 6);
+
+        var path = Path.Combine(
+            ScratchDirectory(), $"{StepOrdinalPrefix}{ordinal}-{unique}{extension}");
+
         File.WriteAllBytes(path, bytes);
         return path;
     }
+
+    /// <summary>
+    /// File-name prefix that carries a step ordinal through Reqnroll's attachment pipeline.
+    /// Shared with the renderer, which parses it - changing it on one side alone silently
+    /// misplaces every screenshot.
+    /// </summary>
+    public const string StepOrdinalPrefix = "specreport-step-";
 
     private string ScratchDirectory()
     {
@@ -195,6 +229,9 @@ public sealed class ScenarioCapture
         Options = options ?? throw new System.ArgumentNullException(nameof(options));
 
     private int _stepIndex = -1;
+
+    /// <summary>Ordinal of the step currently executing, or -1 outside a step.</summary>
+    public int CurrentStepIndex => _stepIndex;
 
     /// <summary>
     /// Zero-based ordinal of the next step in this scenario. Steps within a scenario execute

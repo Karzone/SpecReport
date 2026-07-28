@@ -76,19 +76,7 @@ internal static class HtmlBuilder
               .Append(E(banner)).Append("</span></div>");
         }
 
-        sb.Append("<div class=\"summary\"><div class=\"rate\"><div class=\"value\">")
-          .Append(view.PassRate.ToString(CultureInfo.InvariantCulture)).Append("%</div>")
-          .Append("<div class=\"label\">").Append(view.TotalScenarios).Append(" scenarios</div></div>")
-          .Append("<div class=\"counts\">");
-
-        foreach (var status in new[] { "failed", "passed", "skipped", "pending", "undefined", "ambiguous", "unknown" })
-        {
-            if (!view.Counts.TryGetValue(status, out var n) || n == 0) continue;
-            sb.Append("<span class=\"count\"><b>").Append(n).Append("</b><span>")
-              .Append(E(status)).Append("</span></span>");
-        }
-
-        sb.Append("</div></div>");
+        Dashboard(sb, view);
 
         if (view.Metadata.Count > 0)
         {
@@ -102,6 +90,114 @@ internal static class HtmlBuilder
         }
 
         sb.Append("</header>");
+    }
+
+    /// <summary>
+    /// The summary band: a pass-rate donut, a proportional status bar, and a strip of stats.
+    ///
+    /// Chosen for the first three seconds of reading - did it pass, how long did it take, how
+    /// much of it is there, and is anything untrustworthy. A row of raw counts answers only the
+    /// first of those.
+    /// </summary>
+    private static void Dashboard(StringBuilder sb, ReportViewModel view)
+    {
+        sb.Append("<div class=\"summary\">");
+
+        // --- donut. Inline SVG: no chart library, nothing fetched (SPEC §8.5).
+        var failed = view.Counts.GetValueOrDefault("failed");
+        var tone = failed > 0 ? "failed" : view.PassRate >= 100 ? "passed" : "pending";
+
+        const double radius = 52;
+        var circumference = 2 * Math.PI * radius;
+        var filled = circumference * view.PassRate / 100.0;
+
+        sb.Append("<div class=\"donut ").Append(tone).Append("\">")
+          .Append("<svg viewBox=\"0 0 128 128\" role=\"img\" aria-label=\"")
+          .Append(A($"{view.PassRate}% of scenarios passed")).Append("\">")
+          .Append("<circle class=\"track\" cx=\"64\" cy=\"64\" r=\"52\"></circle>")
+          .Append("<circle class=\"fill\" cx=\"64\" cy=\"64\" r=\"52\" stroke-dasharray=\"")
+          .Append(filled.ToString("0.##", CultureInfo.InvariantCulture)).Append(' ')
+          .Append((circumference - filled).ToString("0.##", CultureInfo.InvariantCulture))
+          .Append("\"></circle></svg>")
+          .Append("<div class=\"donut-centre\"><div class=\"pct\">")
+          .Append(view.PassRate.ToString(CultureInfo.InvariantCulture))
+          .Append("<span>%</span></div><div class=\"cap\">passed</div></div></div>");
+
+        sb.Append("<div class=\"summary-main\">");
+
+        // --- proportional bar, so the shape of the run is visible before reading any number.
+        if (view.TotalScenarios > 0)
+        {
+            sb.Append("<div class=\"statusbar\" role=\"img\" aria-label=\"")
+              .Append(A(StatusSummaryText(view))).Append("\">");
+
+            foreach (var status in StatusOrder)
+            {
+                var n = view.Counts.GetValueOrDefault(status);
+                if (n == 0) continue;
+
+                var pct = n * 100.0 / view.TotalScenarios;
+                sb.Append("<span class=\"seg ").Append(status).Append("\" style=\"width:")
+                  .Append(pct.ToString("0.###", CultureInfo.InvariantCulture))
+                  .Append("%\" title=\"").Append(A($"{n} {status}")).Append("\"></span>");
+            }
+
+            sb.Append("</div>");
+        }
+
+        sb.Append("<div class=\"counts\">");
+        foreach (var status in StatusOrder)
+        {
+            if (!view.Counts.TryGetValue(status, out var n) || n == 0) continue;
+            sb.Append("<span class=\"count ").Append(status).Append("\"><i></i><b>").Append(n)
+              .Append("</b><span>").Append(E(status)).Append("</span></span>");
+        }
+        sb.Append("</div>");
+
+        // --- stat strip.
+        sb.Append("<div class=\"stats\">");
+
+        Stat(sb, "scenarios", view.TotalScenarios.ToString(CultureInfo.InvariantCulture), null);
+        Stat(sb, "steps", view.TotalSteps.ToString(CultureInfo.InvariantCulture), null);
+        Stat(sb, view.FeatureCount == 1 ? "feature" : "features",
+             view.FeatureCount.ToString(CultureInfo.InvariantCulture), null);
+
+        if (view.DurationMs is { } d) Stat(sb, "duration", Ms(d), null);
+
+        if (view.HttpExchangeCount > 0)
+            Stat(sb, "HTTP calls", view.HttpExchangeCount.ToString(CultureInfo.InvariantCulture), null);
+
+        if (view.ScreenshotCount > 0)
+            Stat(sb, view.ScreenshotCount == 1 ? "screenshot" : "screenshots",
+                 view.ScreenshotCount.ToString(CultureInfo.InvariantCulture), null);
+
+        // Flaky is called out rather than buried: a green run containing one is not green.
+        if (view.FlakyCount > 0)
+            Stat(sb, "flaky", view.FlakyCount.ToString(CultureInfo.InvariantCulture), "warn");
+
+        if (view.SlowestScenario is { Length: > 0 } slow && view.SlowestScenarioMs > 0)
+            Stat(sb, "slowest", Ms(view.SlowestScenarioMs), null, slow);
+
+        sb.Append("</div></div></div>");
+    }
+
+    private static readonly string[] StatusOrder =
+        ["failed", "passed", "skipped", "pending", "undefined", "ambiguous", "unknown"];
+
+    private static string StatusSummaryText(ReportViewModel view) =>
+        string.Join(", ", StatusOrder
+            .Where(s => view.Counts.GetValueOrDefault(s) > 0)
+            .Select(s => $"{view.Counts[s]} {s}"));
+
+    private static void Stat(
+        StringBuilder sb, string label, string value, string? tone, string? title = null)
+    {
+        sb.Append("<div class=\"stat");
+        if (tone is not null) sb.Append(' ').Append(tone);
+        sb.Append('"');
+        if (title is not null) sb.Append(" title=\"").Append(A(title)).Append('"');
+        sb.Append("><b>").Append(E(value)).Append("</b><span>").Append(E(label))
+          .Append("</span></div>");
     }
 
     private static void Controls(StringBuilder sb, ReportViewModel view)

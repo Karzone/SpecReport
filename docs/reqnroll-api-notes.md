@@ -187,6 +187,23 @@ just finished:
 in `[BeforeStep]`) and `stepText`, at capture time. Attribution is then ours and deterministic,
 independent of a Reqnroll internal we don't control.
 
+### Screenshots need a second channel: the file name (measured 2026-07-28)
+An `http/1` payload can carry its own `stepIndex`, but a **JPEG cannot** — and the stamping
+problem is identical. Measured on the full-stack sample: a screenshot taken after the *failing*
+step (step 5 of 5) was stamped with the `AFTER_TEST_STEP` hook id belonging to **step 1**, and
+rendered there.
+
+`AddAttachment(filePath)` copies `Path.GetFileName(filePath)` into the envelope verbatim (§3),
+so the file name is the available channel. Capture writes screenshots as
+`specreport-step-0004-{rand}.jpg` and `RunParser.StepOrdinalFromFileName` reads the ordinal
+back. **The prefix is a contract between the two packages** — changing it on one side alone
+silently misplaces every screenshot, with nothing failing.
+
+Note this also rules out the obvious alternative diagnosis: the failure-detection condition was
+tried first (`StepContext.Status`, then `StepContext.StepError`) and neither moved the
+attachment, because the screenshot was always being *taken* at the right moment. Only the
+stamping was wrong.
+
 `StepInfo.PickleStepId` is `internal` (§6), so joining to the message stream by id isn't
 available to third-party code anyway — the index/text pair is the practical alternative.
 

@@ -23,6 +23,26 @@ public sealed class ReportViewModel
     public int TotalScenarios { get; init; }
     public double PassRate { get; init; }
 
+    // ---- headline stats ---------------------------------------------------------------------
+    // Chosen for what a reader wants in the first three seconds: did it pass, how long did it
+    // take, how much of it is there, and is anything untrustworthy. Counts alone answer only
+    // the first.
+
+    public int TotalSteps { get; init; }
+    public int FeatureCount { get; init; }
+
+    /// <summary>Scenarios that failed then passed within this run - worth surfacing at the top
+    /// because a green-looking run containing one is not really green.</summary>
+    public int FlakyCount { get; init; }
+
+    public int ScreenshotCount { get; init; }
+    public int HttpExchangeCount { get; init; }
+
+    /// <summary>The slowest scenario, which is the usual starting point when a suite gets
+    /// slow.</summary>
+    public string? SlowestScenario { get; init; }
+    public double SlowestScenarioMs { get; init; }
+
     public List<MetaEntry> Metadata { get; init; } = [];
 
     /// <summary>Non-null when the input was degraded. Rendered as a banner, never swallowed

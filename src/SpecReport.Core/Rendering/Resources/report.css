@@ -90,28 +90,85 @@ header h1 { margin: 0 0 4px; font-size: 24px; letter-spacing: -0.01em; }
 .banner strong { color: var(--pending); }
 
 .summary {
-  display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: center;
+  display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: center;
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px;
+  border-radius: 12px; padding: 20px 22px; margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px -18px rgba(0,0,0,.35);
 }
-.rate { text-align: center; min-width: 96px; }
-.rate .value { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; }
-.rate .label { font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.summary-main { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 
-.counts { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Pass-rate donut. Inline SVG - no chart library, nothing fetched. */
+.donut { position: relative; width: 104px; height: 104px; flex: 0 0 auto; }
+.donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.donut circle { fill: none; stroke-width: 11; }
+.donut .track { stroke: var(--surface-2); }
+.donut .fill { stroke: var(--passed); stroke-linecap: round; transition: stroke-dasharray .5s ease; }
+.donut.failed .fill { stroke: var(--failed); }
+.donut.pending .fill { stroke: var(--pending); }
+.donut-centre {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 1px;
+}
+.donut-centre .pct {
+  font-size: 25px; font-weight: 680; letter-spacing: -0.03em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.donut-centre .pct span { font-size: 13px; font-weight: 550; color: var(--muted); }
+.donut-centre .cap {
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted);
+}
+
+/* Proportional bar: the shape of the run, before any number is read. */
+.statusbar {
+  display: flex; height: 8px; border-radius: 999px; overflow: hidden;
+  background: var(--surface-2);
+}
+.statusbar .seg { display: block; height: 100%; }
+.statusbar .seg.passed { background: var(--passed); }
+.statusbar .seg.failed { background: var(--failed); }
+.statusbar .seg.skipped, .statusbar .seg.unknown { background: var(--skipped); }
+.statusbar .seg.pending { background: var(--pending); }
+.statusbar .seg.undefined, .statusbar .seg.ambiguous { background: var(--undefined); }
+
+.counts { display: flex; flex-wrap: wrap; gap: 7px; }
 .count {
   display: inline-flex; align-items: baseline; gap: 6px;
   background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: 999px; padding: 4px 12px; font-size: 13px;
+  border-radius: 999px; padding: 3px 11px 3px 9px; font-size: 12.5px; color: var(--muted);
 }
-.count b { font-variant-numeric: tabular-nums; }
+.count i { width: 7px; height: 7px; border-radius: 50%; align-self: center; }
+.count.passed i { background: var(--passed); }
+.count.failed i { background: var(--failed); }
+.count.skipped i, .count.unknown i { background: var(--skipped); }
+.count.pending i { background: var(--pending); }
+.count.undefined i, .count.ambiguous i { background: var(--undefined); }
+.count b { font-variant-numeric: tabular-nums; color: var(--text); font-weight: 620; }
+
+/* Stat strip: the numbers worth having without scrolling. */
+.stats {
+  display: flex; flex-wrap: wrap; gap: 6px 22px;
+  padding-top: 11px; border-top: 1px solid var(--border);
+}
+.stat { display: flex; align-items: baseline; gap: 6px; font-size: 12.5px; color: var(--muted); }
+.stat b { font-size: 15px; font-weight: 640; color: var(--text); font-variant-numeric: tabular-nums; }
+.stat.warn b { color: var(--pending); }
+.stat.warn { color: var(--pending); }
 
 .meta { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); margin-bottom: 22px; }
 .meta span b { color: var(--text); font-weight: 550; }
 
 /* ---- controls ----------------------------------------------------------------------- */
 
-.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 18px; }
+/* Sticky, because on a long report the filters are the thing you reach for after scrolling -
+   and scrolling back to the top to change a filter is the most annoying thing a report can
+   make you do. */
+.controls {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin-bottom: 18px; padding: 10px 0;
+  position: sticky; top: 0; z-index: 20;
+  background: linear-gradient(var(--bg) 78%, transparent);
+  backdrop-filter: blur(6px);
+}
 .controls input[type="search"] {
   flex: 1 1 220px; min-width: 180px;
   background: var(--surface); color: var(--text);
@@ -136,31 +193,52 @@ button:focus-visible, summary:focus-visible {
 
 /* ---- features ------------------------------------------------------------------------ */
 
-.feature { margin-bottom: 26px; }
-.feature > h2 { font-size: 17px; margin: 0 0 2px; letter-spacing: -0.01em; }
-.feature > h2 .kw { color: var(--muted); font-weight: 500; }
-.feature .uri { font: 12px var(--mono); color: var(--muted); margin-bottom: 10px; }
+.feature { margin-bottom: 30px; }
+.feature > h2 {
+  font-size: 16.5px; margin: 0 0 2px; letter-spacing: -0.012em;
+  display: flex; align-items: baseline; gap: 7px;
+}
+.feature > h2 .kw {
+  color: var(--muted); font-weight: 500; font-size: 12px;
+  text-transform: uppercase; letter-spacing: .08em;
+}
+.feature .uri { font: 11.5px var(--mono); color: var(--muted); margin-bottom: 11px; opacity: .85; }
 
-.rule { margin: 14px 0 10px; padding-left: 12px; border-left: 3px solid var(--border); }
-.rule h3 { font-size: 14px; margin: 0 0 8px; }
-.rule h3 .kw { color: var(--muted); font-weight: 500; }
+.rule { margin: 14px 0 10px; padding-left: 13px; border-left: 3px solid var(--border); }
+.rule h3 { font-size: 13.5px; margin: 0 0 8px; }
+.rule h3 .kw {
+  color: var(--muted); font-weight: 500; font-size: 11px;
+  text-transform: uppercase; letter-spacing: .08em;
+}
 
 /* ---- scenarios ------------------------------------------------------------------------ */
 
 .scenario {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); margin-bottom: 8px; overflow: hidden;
+  border-radius: 10px; margin-bottom: 7px; overflow: hidden;
+  transition: border-color .13s ease, box-shadow .13s ease;
 }
+.scenario:hover { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.scenario[open] { box-shadow: 0 1px 2px rgba(0,0,0,.05), 0 10px 26px -20px rgba(0,0,0,.4); }
+
+/* A failed scenario gets a spine, so failures are findable while scrolling past a long list
+   of passes without reading a single word. */
+.scenario[data-status="failed"] { border-left: 3px solid var(--failed); }
+.scenario[data-status="pending"], .scenario[data-status="undefined"],
+.scenario[data-status="ambiguous"] { border-left: 3px solid var(--pending); }
+
 .scenario > summary {
   display: flex; gap: 10px; align-items: center; cursor: pointer;
-  padding: 11px 14px; list-style: none; user-select: none;
+  padding: 10px 14px; list-style: none; user-select: none;
 }
 .scenario > summary::-webkit-details-marker { display: none; }
 .scenario > summary:hover { background: var(--surface-2); }
+.scenario[open] > summary { border-bottom: 1px solid var(--border); }
 
 .pill {
-  flex: 0 0 auto; font-size: 11px; font-weight: 650; text-transform: uppercase;
-  letter-spacing: .05em; padding: 3px 8px; border-radius: 5px; color: #fff;
+  flex: 0 0 auto; font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; padding: 3px 8px; border-radius: 5px; color: #fff;
+  min-width: 62px; text-align: center;
 }
 .pill.passed { background: var(--passed); }
 .pill.failed { background: var(--failed); }
@@ -181,7 +259,7 @@ button:focus-visible, summary:focus-visible {
 .flaky { color: var(--pending); font-size: 11.5px; margin-left: 6px; }
 .dur { flex: 0 0 auto; color: var(--muted); font: 12px var(--mono); font-variant-numeric: tabular-nums; }
 
-.body { padding: 4px 14px 14px; border-top: 1px solid var(--border); }
+.body { padding: 6px 14px 14px; }
 .examples { font-size: 12.5px; color: var(--muted); padding: 8px 0 2px; }
 .examples code { font: 12px var(--mono); color: var(--text); }
 
@@ -275,12 +353,19 @@ pre.ds {
 .shots button.shot:hover { border-color: var(--accent); }
 .shots img { max-width: 190px; max-height: 120px; border-radius: 5px; display: block; }
 
-.http { border: 1px solid var(--border); border-radius: 6px; margin-top: 7px; overflow: hidden; }
+.http {
+  border: 1px solid var(--border); border-radius: 8px; margin-top: 7px; overflow: hidden;
+  background: var(--surface);
+}
 .http > .line {
   display: flex; gap: 9px; align-items: center; flex-wrap: wrap;
-  padding: 7px 10px; background: var(--surface-2); font: 12.5px var(--mono);
+  padding: 8px 11px; background: var(--surface-2); font: 12.5px var(--mono);
+  border-bottom: 1px solid var(--border);
 }
-.http .method { font-weight: 700; }
+.http .method {
+  background: var(--accent); color: #fff; border-radius: 4px;
+  padding: 1px 6px; font-size: 11px; letter-spacing: .03em;
+}
 .http .url { flex: 1 1 auto; min-width: 0; word-break: break-all; }
 .http .code { font-weight: 700; }
 .http .code.c2 { color: var(--passed); }
