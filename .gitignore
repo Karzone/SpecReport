@@ -27,3 +27,6 @@ Thumbs.db
 
 ## Spike run output
 spikes/**/probe-results.txt
+
+## Local preview output
+.preview/

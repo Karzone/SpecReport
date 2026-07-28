@@ -62,6 +62,32 @@ public sealed class StepModel
     /// <summary>Screenshots, HTTP exchanges, logs, files - dispatched by type at render time.</summary>
     public IReadOnlyList<Evidence> Evidence { get; init; } = [];
 
+    /// <summary>
+    /// Position among this scenario's Gherkin steps, or -1 for hook rows. Capture stamps the
+    /// same ordinal into its evidence payloads, which is how evidence attached to a dropped
+    /// per-step hook finds its way back to the step that produced it (api-notes §10).
+    /// </summary>
+    public int Ordinal { get; init; } = -1;
+
+    internal StepModel WithEvidence(IReadOnlyList<Evidence> evidence) => new()
+    {
+        Kind = Kind,
+        Keyword = Keyword,
+        KeywordType = KeywordType,
+        Text = Text,
+        IsBackground = IsBackground,
+        Status = Status,
+        StatusSource = StatusSource,
+        Duration = Duration,
+        Error = Error,
+        DataTable = DataTable,
+        DocString = DocString,
+        Evidence = evidence,
+        Ordinal = Ordinal,
+        HookKind = HookKind,
+        HookTagExpression = HookTagExpression
+    };
+
     // --- Hook rows only -------------------------------------------------------------------
 
     public HookKind HookKind { get; init; } = HookKind.Unknown;

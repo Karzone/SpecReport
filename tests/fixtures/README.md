@@ -98,3 +98,14 @@ last attempt as its outcome, and register as flaky-within-run.
 
 It also carries a made-up envelope type and unknown properties on known envelopes, so
 forward-compatibility (SR-P11) is proven rather than assumed.
+
+## hostile-run-05.ndjson
+
+**Hand-authored.** A scenario named `</script><img src=x onerror="alert('xss')">`, step text with
+`<b>markup</b> & ampersands` and quotes, and a failure message containing a full `<script>`
+element — plus a `runmeta/1` attachment carrying environment/browser/shard values.
+
+Proves two things at once: hostile run content is escaped rather than executed (SR-R2), and run
+metadata surfaces in the report header (SR-C5). The content must still be *visible* in the
+report, escaped — a renderer that silently dropped it would be lying about what the run
+contained.

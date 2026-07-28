@@ -1,1 +1,3 @@
-﻿Console.WriteLine("Hello, World!");
+using SpecReport.Cli;
+
+return CommandLine.Run(args, Console.Out, Console.Error);

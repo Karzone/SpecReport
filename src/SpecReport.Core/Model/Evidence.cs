@@ -14,6 +14,10 @@ public enum EvidenceKind
     /// <summary>JSON with no SpecReport discriminator - pretty-printed, not misread as evidence.</summary>
     Json,
 
+    /// <summary>A `$specreport: runmeta/1` payload. Folded into the run's metadata rather than
+    /// rendered on a step - it describes the whole run (SPEC §3.1).</summary>
+    RunMeta,
+
     /// <summary>Anything else - filename, size, download link.</summary>
     File
 }
@@ -40,6 +44,9 @@ public sealed class Evidence
 
     /// <summary>Parsed detail for <see cref="EvidenceKind.HttpExchange"/>.</summary>
     public HttpExchangeEvidence? Http { get; init; }
+
+    /// <summary>Key/values from a <see cref="EvidenceKind.RunMeta"/> payload.</summary>
+    public IReadOnlyDictionary<string, string>? RunMeta { get; init; }
 }
 
 /// <summary>The parts of an `http/1` payload the report renders. Deliberately a projection, not

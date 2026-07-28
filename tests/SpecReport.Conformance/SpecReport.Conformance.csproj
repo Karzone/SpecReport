@@ -17,6 +17,7 @@
          transitively; Assembly.LoadFrom on the built dll cannot resolve it. -->
     <ProjectReference Include="../../src/SpecReport.Capture/SpecReport.Capture.csproj" />
     <ProjectReference Include="../../src/SpecReport.Core/SpecReport.Core.csproj" />
+    <ProjectReference Include="../../src/SpecReport.Cli/SpecReport.Cli.csproj" />
   </ItemGroup>
 
 </Project>

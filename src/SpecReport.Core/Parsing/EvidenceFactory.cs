@@ -72,16 +72,27 @@ internal static class EvidenceFactory
             using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
 
-            if (root.Str("$specreport") == "http/1")
+            switch (root.Str("$specreport"))
             {
-                return new Evidence
-                {
-                    Kind = EvidenceKind.HttpExchange,
-                    MediaType = mediaType,
-                    FileName = fileName,
-                    SizeBytes = bytes.Length,
-                    Http = ReadHttp(root)
-                };
+                case "http/1":
+                    return new Evidence
+                    {
+                        Kind = EvidenceKind.HttpExchange,
+                        MediaType = mediaType,
+                        FileName = fileName,
+                        SizeBytes = bytes.Length,
+                        Http = ReadHttp(root)
+                    };
+
+                case "runmeta/1":
+                    return new Evidence
+                    {
+                        Kind = EvidenceKind.RunMeta,
+                        MediaType = mediaType,
+                        FileName = fileName,
+                        SizeBytes = bytes.Length,
+                        RunMeta = root.StringMap("values")
+                    };
             }
         }
         catch (JsonException)

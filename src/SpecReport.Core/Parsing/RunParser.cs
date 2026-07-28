@@ -23,6 +23,7 @@ public sealed class RunParser(AttachmentSpool spool)
     private readonly Dictionary<string, HookInfo> _hooks = new(StringComparer.Ordinal);
     private readonly Dictionary<string, AttemptState> _attempts = new(StringComparer.Ordinal);
 
+    private readonly Dictionary<string, string> _runMeta = new(StringComparer.Ordinal);
     private RunMetadata _metadata = new();
     private DateTimeOffset? _startedAt;
     private DateTimeOffset? _finishedAt;
@@ -55,12 +56,18 @@ public sealed class RunParser(AttachmentSpool spool)
         diagnostics.RunDidNotComplete = _finishedAt is null;
         diagnostics.UnfinishedScenarios = _attempts.Values.Count(a => a.FinishedAt is null);
 
+        var features = BuildFeatures();
+
         return new RunModel
         {
             StartedAt = _startedAt,
             FinishedAt = _finishedAt,
-            Metadata = _metadata,
-            Features = BuildFeatures(),
+            // runmeta attachments arrive during the execution pass, after `meta`, so the
+            // metadata record is finalised here rather than when `meta` was read.
+            Metadata = _runMeta.Count == 0
+                ? _metadata
+                : WithCustom(_metadata, _runMeta),
+            Features = features,
             Diagnostics = diagnostics
         };
     }
@@ -355,6 +362,14 @@ public sealed class RunParser(AttachmentSpool spool)
         var evidence = EvidenceFactory.Create(
             mediaType, body, isBase64, attachment.Str("fileName"), _spool);
 
+        // Run metadata describes the whole run, not a step - fold it into the header rather
+        // than hanging it off whichever scenario happened to emit it (SPEC §3.1).
+        if (evidence is { Kind: EvidenceKind.RunMeta, RunMeta: { } values })
+        {
+            foreach (var (key, value) in values) _runMeta[key] = value;
+            return;
+        }
+
         // An http/1 payload carries its OWN step index (Reqnroll's testStepId points at the
         // AfterStep hook, not the Gherkin step - api-notes §10), and out-of-step exchanges are
         // bucketed at scenario level rather than blamed on a step.
@@ -392,6 +407,23 @@ public sealed class RunParser(AttachmentSpool spool)
 
     private static string? Empty(string? value) =>
         string.IsNullOrEmpty(value) ? null : value;
+
+    private static RunMetadata WithCustom(RunMetadata source, Dictionary<string, string> custom) =>
+        new()
+        {
+            ProtocolVersion = source.ProtocolVersion,
+            Implementation = source.Implementation,
+            ImplementationVersion = source.ImplementationVersion,
+            Runtime = source.Runtime,
+            RuntimeVersion = source.RuntimeVersion,
+            OperatingSystem = source.OperatingSystem,
+            Cpu = source.Cpu,
+            CiName = source.CiName,
+            CiUrl = source.CiUrl,
+            CommitSha = source.CommitSha,
+            Branch = source.Branch,
+            Custom = custom
+        };
 
     // ---- assembly --------------------------------------------------------------------------
 
@@ -456,6 +488,28 @@ public sealed class RunParser(AttachmentSpool spool)
         var steps = new List<StepModel>();
         var sawFailure = false;
 
+        // Evidence that must be re-homed onto a Gherkin step, keyed by that step's ordinal.
+        //
+        // Capture attaches from an [AfterStep] hook, so Reqnroll stamps the attachment with the
+        // AFTER_TEST_STEP hook's id (api-notes §10). Those hook rows are dropped as noise - and
+        // dropping them naively took their evidence with them, silently losing every
+        // step-scoped HTTP exchange. The payload's own stepIndex is what puts it back.
+        var rehomed = new Dictionary<int, List<Evidence>>();
+        var gherkinOrdinal = 0;
+        var lastGherkinOrdinal = -1;
+
+        void Rehome(IReadOnlyList<Evidence> items)
+        {
+            foreach (var item in items)
+            {
+                var target = item.Http is { StepIndex: >= 0 } http ? http.StepIndex : lastGherkinOrdinal;
+                if (target < 0) target = 0;
+
+                if (!rehomed.TryGetValue(target, out var list)) rehomed[target] = list = [];
+                list.Add(item);
+            }
+        }
+
         foreach (var testStep in testCase.Steps)
         {
             attempt.Results.TryGetValue(testStep.Id, out var result);
@@ -471,6 +525,7 @@ public sealed class RunParser(AttachmentSpool spool)
                 if (hook?.Kind is HookKind.BeforeTestStep or HookKind.AfterTestStep &&
                     result?.Status != StepStatus.Failed)
                 {
+                    if (evidence is { Count: > 0 }) Rehome(evidence);
                     continue;
                 }
 
@@ -508,6 +563,8 @@ public sealed class RunParser(AttachmentSpool spool)
 
             if (status == StepStatus.Failed) sawFailure = true;
 
+            lastGherkinOrdinal = gherkinOrdinal;
+
             steps.Add(new StepModel
             {
                 Kind = StepKind.Gherkin,
@@ -521,9 +578,14 @@ public sealed class RunParser(AttachmentSpool spool)
                 Error = result?.Error,
                 DataTable = pickleStep.DataTable,
                 DocString = pickleStep.DocString,
-                Evidence = evidence ?? []
+                Evidence = evidence ?? [],
+                // Marks this row's position among Gherkin steps, so re-homed evidence can be
+                // matched back to it below.
+                Ordinal = gherkinOrdinal++
             });
         }
+
+        if (rehomed.Count > 0) steps = MergeRehomedEvidence(steps, rehomed);
 
         return new ScenarioAttempt
         {
@@ -533,6 +595,34 @@ public sealed class RunParser(AttachmentSpool spool)
             Steps = steps,
             OutsideStepEvidence = attempt.OutsideStepEvidence
         };
+    }
+
+    /// <summary>
+    /// Folds evidence recovered from dropped per-step hook rows onto the Gherkin steps that
+    /// actually produced it, in capture order.
+    /// </summary>
+    private static List<StepModel> MergeRehomedEvidence(
+        List<StepModel> steps, Dictionary<int, List<Evidence>> rehomed)
+    {
+        var merged = new List<StepModel>(steps.Count);
+
+        foreach (var step in steps)
+        {
+            if (step.Kind != StepKind.Gherkin ||
+                step.Ordinal < 0 ||
+                !rehomed.TryGetValue(step.Ordinal, out var extra))
+            {
+                merged.Add(step);
+                continue;
+            }
+
+            var combined = step.Evidence.Concat(
+                extra.OrderBy(e => e.Http?.Sequence ?? int.MaxValue)).ToList();
+
+            merged.Add(step.WithEvidence(combined));
+        }
+
+        return merged;
     }
 
     private IReadOnlyList<FeatureModel> GroupIntoFeatures(
