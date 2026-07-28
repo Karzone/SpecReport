@@ -9,9 +9,22 @@
 Gherkin step timelines with screenshots for UI tests, full HTTP request/response detail for API
 tests, and trend + flakiness views across many runs.
 
+*One self-contained file · No server · No CDN · Opens offline*
+
+[![NuGet](https://img.shields.io/nuget/vpre/SpecReport.Cli?logo=nuget&label=SpecReport.Cli)](https://www.nuget.org/packages/SpecReport.Cli)
 [![CI](https://github.com/Karzone/SpecReport/actions/workflows/ci.yml/badge.svg)](https://github.com/Karzone/SpecReport/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4.svg)](https://dotnet.microsoft.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+[Quick start](#quick-start) ·
+[What you get](#what-you-get) ·
+[Multiple runs](#multiple-runs) ·
+[Capture](#capturing-http-and-screenshots) ·
+[CI](#running-it-in-ci) ·
+[CLI](#cli-reference) ·
+[Redaction](#redaction-what-it-covers-and-what-it-doesnt) ·
+[Troubleshooting](#troubleshooting) ·
+[Limitations](#limitations)
 
 </div>
 
@@ -19,15 +32,6 @@ tests, and trend + flakiness views across many runs.
 
 > **Pre-release (`0.1.0-alpha`).** It works end to end and every rule in the specification is
 > covered by an executable conformance suite — but the API may still move before 1.0.
-
-## Contents
-
-- [Quick start](#quick-start) · [What you get](#what-you-get) · [Multiple runs](#multiple-runs)
-- [Capturing HTTP and screenshots](#capturing-http-and-screenshots) · [CI](#running-it-in-ci)
-- [CLI reference](#cli-reference) · [Redaction](#redaction-what-it-covers-and-what-it-doesnt)
-- [Troubleshooting](#troubleshooting) · [Limitations](#limitations) · [Contributing](#contributing)
-
----
 
 ## Quick start
 
