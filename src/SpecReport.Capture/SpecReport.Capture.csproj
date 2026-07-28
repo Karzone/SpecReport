@@ -29,9 +29,6 @@
     <InternalsVisibleTo Include="SpecReport.Conformance" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="/" />
-  </ItemGroup>
 
   <!-- Mechanical enforcement of the SPEC 3.5 dependency rule: the build fails if anyone
        adds a package reference beyond the allow-list. -->

@@ -1,0 +1,63 @@
+name: Bug report
+description: Something SpecReport did wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. The single most useful thing you can attach is the `.ndjson`
+        that reproduces it — this project is built around real recordings, and a fixture is
+        worth more than a description.
+
+        **Please redact it first if it came from a real system.** SpecReport's own redaction is
+        name-based and does not cover everything; see
+        [what it does and doesn't cover](https://github.com/Karzone/SpecReport#redaction-what-it-covers-and-what-it-doesnt).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: The command you ran, and the `.ndjson` if you can share one.
+      placeholder: specreport TestResults/messages.ndjson -o report.html
+    validations:
+      required: true
+
+  - type: input
+    id: specreport-version
+    attributes:
+      label: SpecReport version
+      placeholder: 0.1.0-alpha
+    validations:
+      required: true
+
+  - type: input
+    id: reqnroll-version
+    attributes:
+      label: Reqnroll version
+      placeholder: 3.3.4
+    validations:
+      required: true
+
+  - type: dropdown
+    id: runner
+    attributes:
+      label: Test runner
+      options: [MSTest, NUnit, xUnit, Other]
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: OS and .NET version
+      placeholder: Windows 11, .NET 10.0.8
+    validations:
+      required: true

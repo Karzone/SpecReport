@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest something SpecReport should do
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before writing: **[SPEC.md §9](https://github.com/Karzone/SpecReport/blob/main/docs/SPEC.md)**
+        lists things SpecReport deliberately does *not* do, and why. If your idea is on that
+        list, say so and make the case for changing the decision — that is a perfectly good
+        issue, and more useful than one that does not know the decision was made.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you hitting?
+      description: >
+        Describe the situation rather than the solution. "I cannot tell which environment a
+        failing run was against" is more useful than "add a dropdown".
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like it to do?
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checked-spec
+    attributes:
+      label: Have you checked the non-goals?
+      options:
+        - label: I have read SPEC.md §9 and this is not already a deliberate non-goal (or I am arguing to change one)
+          required: true

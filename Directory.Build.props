@@ -18,12 +18,39 @@
     <Authors>Karzone</Authors>
     <Company>Karzone</Company>
     <Copyright>Copyright (c) 2026 Karzone</Copyright>
+    <Product>SpecReport</Product>
+
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>reqnroll;bdd;gherkin;html-report;test-report;living-documentation;cucumber</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/Karzone/SpecReport</PackageProjectUrl>
+    <PackageTags>reqnroll;bdd;gherkin;html-report;test-report;living-documentation;cucumber;specflow</PackageTags>
+    <PackageReleaseNotes>See https://github.com/Karzone/SpecReport/releases</PackageReleaseNotes>
+
+    <RepositoryUrl>https://github.com/Karzone/SpecReport</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+  <!-- Source Link + reproducible builds. The .NET SDK ships GitHub Source Link in-box, so no
+       package reference is needed - which matters because SpecReport.Capture is allowed no
+       dependency beyond Reqnroll (SPEC 3.5). -->
+  <PropertyGroup>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Deterministic>true</Deterministic>
+    <!-- Set by CI so official builds are byte-reproducible; left off locally because it
+         requires the source root to be normalised. -->
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!-- Files every package carries. Guarded so test and sample projects do not try to pack them. -->
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="/" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)assets/icon.png" Pack="true" PackagePath="/" Visible="false" />
+  </ItemGroup>
 
 </Project>

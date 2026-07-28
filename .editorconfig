@@ -1,0 +1,66 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,md,html,css,js}]
+indent_size = 2
+
+[*.md]
+# Two trailing spaces are a hard line break in Markdown.
+trim_trailing_whitespace = false
+
+[*.{csproj,props,targets}]
+indent_size = 2
+
+[*.ndjson]
+insert_final_newline = false
+trim_trailing_whitespace = false
+
+[*.cs]
+max_line_length = 100
+
+# --- language conventions -------------------------------------------------------------------
+csharp_using_directive_placement = outside_namespace:warning
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_prefer_braces = when_multiline:silent
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:silent
+csharp_style_prefer_primary_constructors = true:suggestion
+
+dotnet_sort_system_directives_first = true
+dotnet_style_qualification_for_field = false:warning
+dotnet_style_qualification_for_property = false:warning
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_prefer_conditional_expression_over_return = false:silent
+
+# --- naming ----------------------------------------------------------------------------------
+dotnet_naming_rule.private_fields_underscore.severity = warning
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_prefix
+
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+
+dotnet_naming_style.underscore_prefix.required_prefix = _
+dotnet_naming_style.underscore_prefix.capitalization = camel_case
+
+# --- analyzers ---------------------------------------------------------------------------------
+# CA1848 (LoggerMessage delegates) and CA2007 (ConfigureAwait in libraries that do not need it)
+# are noise for a console tool and a test-time plugin.
+dotnet_diagnostic.CA1848.severity = none
+dotnet_diagnostic.CA2007.severity = none
+
+[tests/**/*.cs]
+# Test methods say what they assert; an xmldoc requirement would add ceremony without adding
+# information.
+dotnet_diagnostic.CS1591.severity = none
+
+[samples/**/*.cs]
+dotnet_diagnostic.CS1591.severity = none

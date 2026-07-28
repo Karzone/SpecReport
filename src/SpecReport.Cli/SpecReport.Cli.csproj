@@ -16,8 +16,5 @@
     <ProjectReference Include="../SpecReport.Core/SpecReport.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="/" />
-  </ItemGroup>
 
 </Project>

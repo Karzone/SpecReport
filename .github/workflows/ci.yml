@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build:
+    name: Build and gate (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # SpecReport supports localized Gherkin, and globalization behaves differently across
+        # platforms - so this runs everywhere rather than on Windows alone.
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        # Warnings are errors in this repo (TreatWarningsAsErrors), so this fails on any.
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Conformance gate
+        # The definition of done: a criterion at or below currentMilestone with no test
+        # tagged [Criterion("SR-…")] fails here. See docs/SPEC.md §14.
+        run: dotnet test tests/SpecReport.Conformance --configuration Release --no-build --verbosity normal
+
+      - name: Upload conformance report
+        if: always() && matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance
+          path: docs/conformance.md
+          if-no-files-found: warn
+
+  samples:
+    name: Samples produce valid output
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # The samples deliberately contain failing scenarios - they exist to produce realistic
+      # recordings, not to go green - so the test step is expected to exit non-zero.
+      - name: Run sample suites
+        run: |
+          dotnet test samples/SampleTests --configuration Release || true
+          dotnet test samples/CaptureSampleTests --configuration Release || true
+
+      - name: Render reports from the freshly produced output
+        run: |
+          set -e
+          for f in $(find samples -name '*.ndjson' -path '*/bin/*'); do
+            echo "rendering $f"
+            dotnet run --project src/SpecReport.Cli --configuration Release -- \
+              "$f" -o "artifacts/$(basename "$f" .ndjson).html"
+          done
+
+      - name: Check the reports are self-contained
+        # SR-R1 asserts this against fixtures; this is the end-to-end version, catching a
+        # regression that only shows up on freshly generated output.
+        run: |
+          set -e
+          for f in artifacts/*.html; do
+            if grep -qE '(src|href)="https?://' "$f"; then
+              echo "::error file=$f::report references a remote URL - it must render offline"
+              exit 1
+            fi
+          done
+          echo "all reports are self-contained"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sample-reports
+          path: artifacts/*.html
+          if-no-files-found: error
+
+  pack:
+    name: Pack
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Source Link needs full history to resolve the commit.
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Pack
+        run: dotnet pack --configuration Release -o artifacts
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: |
+            artifacts/*.nupkg
+            artifacts/*.snupkg
+          if-no-files-found: error

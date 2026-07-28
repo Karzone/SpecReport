@@ -1,0 +1,29 @@
+version: 2
+
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+    groups:
+      # Test tooling moves together and is not shipped, so batching keeps the noise down.
+      test-tooling:
+        patterns:
+          - "Microsoft.NET.Test.Sdk"
+          - "MSTest*"
+          - "xunit*"
+    ignore:
+      # Reqnroll is SpecReport.Capture's only dependency and its version range is a
+      # compatibility decision, not a maintenance chore - a bump needs the fixtures
+      # re-recorded and the API notes re-checked. See CONTRIBUTING.md §2.
+      - dependency-name: "Reqnroll*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci"

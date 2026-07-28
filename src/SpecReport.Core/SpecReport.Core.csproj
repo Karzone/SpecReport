@@ -15,8 +15,5 @@
     <EmbeddedResource Include="Rendering/Resources/report.js" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="/" />
-  </ItemGroup>
 
 </Project>

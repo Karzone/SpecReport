@@ -1,0 +1,28 @@
+# Normalise line endings so the repo is identical on every platform and `git status` stops
+# reporting phantom changes when Windows and Linux contributors touch the same file.
+* text=auto eol=lf
+
+# Windows-only scripts must keep CRLF or they break when executed.
+*.cmd    text eol=crlf
+*.bat    text eol=crlf
+*.ps1    text eol=crlf
+
+# Fixtures are byte-for-byte recordings of real Reqnroll output. Any line-ending translation
+# would change what they assert, so they are exempt from normalisation.
+*.ndjson -text
+
+# Binary assets.
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.snk    binary
+*.nupkg  binary
+
+# Keep generated reports out of diffs - they are large, single-line, and not reviewed by hand.
+docs/conformance.md linguist-generated=true
+
+# Report the repo as C#, not as HTML/CSS from the embedded page template.
+*.html   linguist-detectable=false
+*.css    linguist-detectable=false
