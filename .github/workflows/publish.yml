@@ -1,0 +1,103 @@
+name: Publish
+
+# Publishing is deliberately separate from CI and never runs on a push.
+#
+# A NuGet version is PERMANENT - it can be unlisted but never deleted, and an unlisted version
+# still restores for anyone who pins it. So this runs only when a release is published (or when
+# someone explicitly dispatches it), and it goes through an environment that requires approval.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Pack and verify without pushing"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  # Required for Trusted Publishing. Without it the OIDC token request fails SILENTLY and the
+  # login step yields no key - so a missing line here looks like a mysterious auth failure.
+  id-token: write
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    # Gated environment: publishing waits for a human approval. The name must match the
+    # Environment field of the trusted-publishing policy on nuget.org.
+    environment: nuget
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Source Link needs full history to resolve the commit for the symbol packages.
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build --configuration Release
+
+      # Never publish from an unverified build. The gate enforces every criterion in the
+      # specification, including the ones signed off by a human.
+      - name: Conformance gate
+        run: dotnet test tests/SpecReport.Conformance --configuration Release --no-build
+
+      - name: Pack
+        run: dotnet pack --configuration Release -o artifacts
+
+      - name: List what would be published
+        run: ls -lh artifacts/
+
+      # Trusted Publishing: exchanges the workflow's OIDC token for a temporary nuget.org key.
+      # No long-lived secret exists to leak. The key is valid for one hour, so it is requested
+      # immediately before the push rather than at the top of the job.
+      - name: Authenticate to NuGet
+        if: ${{ github.event_name == 'release' || inputs.dry-run == false }}
+        id: login
+        uses: NuGet/login@v1
+        with:
+          # The nuget.org account name that owns the packages - public information, not a secret.
+          user: Karzone
+
+      # Core first: the other two resolve against it.
+      # --skip-duplicate makes a re-run after a partial failure safe rather than fatal.
+      - name: Push SpecReport.Core
+        if: ${{ github.event_name == 'release' || inputs.dry-run == false }}
+        run: >
+          dotnet nuget push artifacts/SpecReport.Core.*.nupkg
+          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Push SpecReport.Capture
+        if: ${{ github.event_name == 'release' || inputs.dry-run == false }}
+        run: >
+          dotnet nuget push artifacts/SpecReport.Capture.*.nupkg
+          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Push SpecReport.Cli
+        if: ${{ github.event_name == 'release' || inputs.dry-run == false }}
+        run: >
+          dotnet nuget push artifacts/SpecReport.Cli.*.nupkg
+          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: packages
+          path: |
+            artifacts/*.nupkg
+            artifacts/*.snupkg
+          if-no-files-found: error
