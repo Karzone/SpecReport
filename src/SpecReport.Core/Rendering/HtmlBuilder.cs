@@ -128,6 +128,13 @@ internal static class HtmlBuilder
         sb.Append("<button type=\"button\" class=\"chip\" id=\"toggle-all\" aria-pressed=\"false\">")
           .Append("expand all</button>");
 
+        // Theme follows the OS by default; this overrides it. A report is an archived artifact
+        // that gets opened on someone else's machine, and their OS setting is not always the
+        // one they want to read a wall of code in.
+        sb.Append("<button type=\"button\" class=\"chip\" id=\"theme\" ")
+          .Append("aria-label=\"Switch between light and dark theme\" title=\"Switch theme\">")
+          .Append("&#9681; theme</button>");
+
         sb.Append("</div>");
     }
 

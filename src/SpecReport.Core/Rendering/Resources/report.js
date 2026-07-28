@@ -80,6 +80,45 @@
     });
   });
 
+  /* ---- theme --------------------------------------------------------------------- */
+
+  var themeButton = document.getElementById('theme');
+
+  function storedTheme() {
+    // localStorage throws on file:// in some browsers, which is exactly where these reports
+    // are usually opened - so a failure here must not take the rest of the script with it.
+    try { return window.localStorage.getItem('specreport-theme'); } catch (e) { return null; }
+  }
+
+  function storeTheme(value) {
+    try { window.localStorage.setItem('specreport-theme', value); } catch (e) { /* ignore */ }
+  }
+
+  // Apply a previously chosen theme. With no choice stored, the attribute stays absent and CSS
+  // follows prefers-color-scheme.
+  var saved = storedTheme();
+  if (saved === 'dark' || saved === 'light') {
+    document.documentElement.setAttribute('data-theme', saved);
+  }
+
+  if (themeButton) {
+    themeButton.addEventListener('click', function () {
+      var root = document.documentElement;
+      var current = root.getAttribute('data-theme');
+
+      if (!current) {
+        // First click: flip away from whatever the OS is currently giving us.
+        var osDark = window.matchMedia &&
+                     window.matchMedia('(prefers-color-scheme: dark)').matches;
+        current = osDark ? 'dark' : 'light';
+      }
+
+      var next = current === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      storeTheme(next);
+    });
+  }
+
   /* ---- expand / collapse all ------------------------------------------------------- */
 
   var toggleAll = document.getElementById('toggle-all');

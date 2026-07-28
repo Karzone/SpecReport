@@ -14,5 +14,27 @@
     "after sign-off, delete the entry - a stale tick is worse than no tick."
   ],
 
-  "signoffs": []
+  "signoffs": [
+    {
+      "id": "SR-R4",
+      "milestone": "M6",
+      "signedOffBy": "Karzone",
+      "date": "2026-07-28",
+      "notes": "Reviewed the rendered report (sample-run-01 and capture-run-02) in the browser, both themes. Status is carried by a glyph plus a visually-hidden status word on every step row, and by a text pill on every scenario row, so it never depends on colour alone. Approved."
+    },
+    {
+      "id": "SR-R6",
+      "milestone": "M6",
+      "signedOffBy": "Karzone",
+      "date": "2026-07-28",
+      "notes": "Approved in both themes. Backed by measurement rather than judgement alone: every foreground/background pair in the palette was computed against both --surface and --surface-2. Dark theme was already AA throughout; light theme had four status colours below 4.5:1 (passed 3.96, skipped 3.14, pending 3.81, undefined 4.23) and those were darkened to 5.6-6.5:1 before this sign-off was given. Ratios are recorded beside the values in report.css."
+    },
+    {
+      "id": "SR-R10",
+      "milestone": "M6",
+      "signedOffBy": "Karzone",
+      "date": "2026-07-28",
+      "notes": "Hook rows render italic, dimmed and without a keyword column, so they read as quieter than Gherkin steps - while a FAILED hook returns to full opacity and normal style, so the most common CI failure (a throwing BeforeScenario) is not lost. Checked against Hooks.feature in the rendered report. Approved."
+    }
+  ]
 }

@@ -2,46 +2,65 @@
    identically from a file:// URL on a machine with no network (SPEC 8.5).
    Font stacks are system fonts only, for the same reason. */
 
-:root {
-  --bg: #fbfbfd;
-  --surface: #ffffff;
-  --surface-2: #f4f5f8;
-  --border: #e2e5ec;
-  --text: #14161c;
-  --muted: #666e7e;
-  --accent: #3b5bdb;
+/* ---- palettes ---------------------------------------------------------------------------
+   Colour literals live here ONCE. The three blocks below only map the active variables onto
+   one palette or the other, so changing a colour never means remembering to change it in two
+   places - which is how a light/dark pair silently drifts apart.
 
-  /* Light-theme status colours are darker than they look like they need to be, because they
-     carry meaning: a status glyph is text, so it needs 4.5:1 against both the surface and the
-     surface-2 grey. The obvious brighter versions measured 3.1-4.2:1 and failed AA. */
-  --passed: #12703d;    /* 6.16:1 on surface, 5.65:1 on surface-2 */
-  --failed: #c92a3a;    /* 5.42:1 */
-  --skipped: #5f6779;   /* 5.67:1 */
-  --pending: #8a5800;   /* 6.04:1 */
-  --undefined: #6d3bd4; /* 6.51:1 */
-  --unknown: #5f6779;
+   Contrast measured against both --surface and --surface-2, in both themes; every pair meets
+   WCAG AA (4.5:1). Light status colours are darker than they look like they need to be
+   because a status glyph is text: the obvious brighter versions measured 3.1-4.2:1 and failed.
+   Signed off 2026-07-28 (SR-R6). If you change one, re-measure. */
+:root {
+  --l-bg: #fbfbfd;      --l-surface: #ffffff;  --l-surface-2: #f4f5f8;
+  --l-border: #e2e5ec;  --l-text: #14161c;     --l-muted: #666e7e;
+  --l-accent: #3b5bdb;
+  --l-passed: #12703d;  /* 6.16:1 */
+  --l-failed: #c92a3a;  /* 5.42:1 */
+  --l-skipped: #5f6779; /* 5.67:1 */
+  --l-pending: #8a5800; /* 6.04:1 */
+  --l-undefined: #6d3bd4; /* 6.51:1 */
+
+  --d-bg: #0f1116;      --d-surface: #161922;  --d-surface-2: #1c202b;
+  --d-border: #2a3040;  --d-text: #e8eaf0;     --d-muted: #98a1b3;
+  --d-accent: #7d92f5;
+  --d-passed: #3ecf8e;  /* 8.79:1 */
+  --d-failed: #ff6b7a;  /* 6.38:1 */
+  --d-skipped: #8892a4; /* 5.60:1 */
+  --d-pending: #e0a33a; /* 7.92:1 */
+  --d-undefined: #a78bfa; /* 6.45:1 */
 
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --radius: 8px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1116;
-    --surface: #161922;
-    --surface-2: #1c202b;
-    --border: #2a3040;
-    --text: #e8eaf0;
-    --muted: #98a1b3;
-    --accent: #7d92f5;
+/* Default: follow the operating system. */
+:root, :root[data-theme="light"] {
+  --bg: var(--l-bg); --surface: var(--l-surface); --surface-2: var(--l-surface-2);
+  --border: var(--l-border); --text: var(--l-text); --muted: var(--l-muted);
+  --accent: var(--l-accent); --passed: var(--l-passed); --failed: var(--l-failed);
+  --skipped: var(--l-skipped); --pending: var(--l-pending); --undefined: var(--l-undefined);
+  --unknown: var(--l-skipped);
+}
 
-    --passed: #3ecf8e;
-    --failed: #ff6b7a;
-    --skipped: #8892a4;
-    --pending: #e0a33a;
-    --undefined: #a78bfa;
+@media (prefers-color-scheme: dark) {
+  /* :not([data-theme]) so an explicit choice from the toggle is not overridden by the OS. */
+  :root:not([data-theme]) {
+    --bg: var(--d-bg); --surface: var(--d-surface); --surface-2: var(--d-surface-2);
+    --border: var(--d-border); --text: var(--d-text); --muted: var(--d-muted);
+    --accent: var(--d-accent); --passed: var(--d-passed); --failed: var(--d-failed);
+    --skipped: var(--d-skipped); --pending: var(--d-pending); --undefined: var(--d-undefined);
+    --unknown: var(--d-skipped);
   }
+}
+
+:root[data-theme="dark"] {
+  --bg: var(--d-bg); --surface: var(--d-surface); --surface-2: var(--d-surface-2);
+  --border: var(--d-border); --text: var(--d-text); --muted: var(--d-muted);
+  --accent: var(--d-accent); --passed: var(--d-passed); --failed: var(--d-failed);
+  --skipped: var(--d-skipped); --pending: var(--d-pending); --undefined: var(--d-undefined);
+  --unknown: var(--d-skipped);
 }
 
 * { box-sizing: border-box; }

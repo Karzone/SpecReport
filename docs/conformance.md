@@ -43,12 +43,12 @@ with no test, or a manual one with no recorded sign-off, fails the build.
 | **SR-P8** — Retried scenarios group by testCaseId and count once, using the last attempt as the outcome. | 4.5 | executable | proven | `M2Criteria.RetriedScenariosCountOnceAndTakeTheLastAttempt` |
 | **SR-P9** — Two byte-identical Scenario Outline example rows resolve to distinct scenario identities. | 6.2 | executable | proven | `M2Criteria.ByteIdenticalExampleRowsGetDistinctIdentities` |
 | **SR-R1** — The emitted HTML issues zero network requests - no CDN, font, image or fetch URL. | 8 | executable | proven | `M3Criteria.TheReportIssuesZeroNetworkRequests` |
-| **SR-R10** — Hook rows are visually de-emphasised relative to Gherkin step rows. | 4.3 | manual | **AWAITING SIGN-OFF** | - |
+| **SR-R10** — Hook rows are visually de-emphasised relative to Gherkin step rows. | 4.3 | manual | signed off | Karzone, 2026-07-28 |
 | **SR-R2** — Run data is escaped such that a scenario named with a closing script tag cannot execute. | 8 | executable | proven | `M3Criteria.HostileRunContentCannotExecute` |
 | **SR-R3** — Failed scenarios render expanded and passing ones collapsed by default. | 4.2 | executable | proven | `M3Criteria.FailuresRenderExpandedAndPassesCollapsed` |
-| **SR-R4** — Status is conveyed by glyph AND text, never by colour alone. | 8 | manual | **AWAITING SIGN-OFF** | - |
+| **SR-R4** — Status is conveyed by glyph AND text, never by colour alone. | 8 | manual | signed off | Karzone, 2026-07-28 |
 | **SR-R5** — Expand/collapse, filters and the lightbox are fully keyboard operable, and Escape closes the lightbox. | 8 | executable | proven | `M6Criteria.EveryInteractiveControlIsKeyboardOperable` |
-| **SR-R6** — Both light and dark themes meet WCAG AA contrast. | 8 | manual | **AWAITING SIGN-OFF** | - |
+| **SR-R6** — Both light and dark themes meet WCAG AA contrast. | 8 | manual | signed off | Karzone, 2026-07-28 |
 | **SR-R7** — Degraded input produces a visible banner stating what was skipped or incomplete. | 7.1 | executable | proven | `M3Criteria.DegradedInputProducesAVisibleBanner` |
 | **SR-R8** — At 5,000 scenarios / 50,000 steps the report generates in under 10s and the document stays under 40MB, and filtering does no per-scenario work at load. | 8 | executable | proven | `M6Criteria.TheScaleBudgetHolds` |
 | **SR-R9** — Redaction and truncation markers are always rendered, never silently omitted. | 5.2 | executable | proven | `M3Criteria.RedactionAndTruncationMarkersAreAlwaysRendered` |
