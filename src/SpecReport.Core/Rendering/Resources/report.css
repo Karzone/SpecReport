@@ -11,12 +11,15 @@
   --muted: #666e7e;
   --accent: #3b5bdb;
 
-  --passed: #1f9254;
-  --failed: #c92a3a;
-  --skipped: #8892a4;
-  --pending: #b5750d;
-  --undefined: #8b5cf6;
-  --unknown: #8892a4;
+  /* Light-theme status colours are darker than they look like they need to be, because they
+     carry meaning: a status glyph is text, so it needs 4.5:1 against both the surface and the
+     surface-2 grey. The obvious brighter versions measured 3.1-4.2:1 and failed AA. */
+  --passed: #12703d;    /* 6.16:1 on surface, 5.65:1 on surface-2 */
+  --failed: #c92a3a;    /* 5.42:1 */
+  --skipped: #5f6779;   /* 5.67:1 */
+  --pending: #8a5800;   /* 6.04:1 */
+  --undefined: #6d3bd4; /* 6.51:1 */
+  --unknown: #5f6779;
 
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;

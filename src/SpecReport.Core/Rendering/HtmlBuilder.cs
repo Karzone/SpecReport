@@ -408,6 +408,10 @@ internal static class HtmlBuilder
     private static void Part(
         StringBuilder sb, string title, Dictionary<string, string> headers, string? body, bool truncated)
     {
+        // A GET with no custom headers has nothing to show. Rendering the heading anyway leaves
+        // an empty box that reads as missing data rather than as absent data.
+        if (headers.Count == 0 && string.IsNullOrEmpty(body)) return;
+
         sb.Append("<div class=\"part\"><h4>").Append(E(title)).Append("</h4>");
 
         if (headers.Count > 0)
