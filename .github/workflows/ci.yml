@@ -48,7 +48,7 @@ jobs:
 
       - name: Upload conformance report
         if: always() && matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: conformance
           path: docs/conformance.md
@@ -94,7 +94,7 @@ jobs:
           done
           echo "all reports are self-contained"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: sample-reports
           path: artifacts/*.html
@@ -118,7 +118,7 @@ jobs:
       - name: Pack
         run: dotnet pack --configuration Release -o artifacts
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packages
           path: |
