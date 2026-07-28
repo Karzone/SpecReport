@@ -1,0 +1,16 @@
+# Blank issues stay enabled: not every report fits a form, and forcing one on someone who has
+# found something odd is a good way to not hear about it.
+blank_issues_enabled: true
+
+contact_links:
+  - name: Question or idea
+    url: https://github.com/Karzone/SpecReport/discussions
+    about: For anything that is not a bug or a concrete feature request.
+
+  - name: Security vulnerability
+    url: https://github.com/Karzone/SpecReport/security/advisories/new
+    about: Report privately. Please do not open a public issue - see SECURITY.md for what is in scope.
+
+  - name: Read the specification first
+    url: https://github.com/Karzone/SpecReport/blob/main/docs/SPEC.md
+    about: SPEC.md section 9 lists what SpecReport deliberately does NOT do, and why.
