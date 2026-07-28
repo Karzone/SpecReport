@@ -532,3 +532,47 @@ After M3 the tool is demo-ably differentiated; after M4 it is genuinely useful e
 Verified Reqnroll API surface (formatters config, emitted envelopes, attachment semantics,
 hook behaviour, plugin packaging): see [`reqnroll-api-notes.md`](reqnroll-api-notes.md),
 checked against Reqnroll v3.3.4 docs + source on 2026-07-28.
+
+---
+
+## 14. Conformance gate — this spec is executable
+
+The rules above are only worth writing if something checks them. Every hard rule in this
+document has an entry in [`criteria.json`](criteria.json) with a stable id, and the
+`SpecReport.Conformance` test project turns that registry into a build gate.
+
+### 14.1 How it works
+
+1. **Each criterion declares a `kind` and a `milestone`.**
+   - `executable` — a test must prove it.
+   - `manual` — needs human or visual judgement (contrast, "reads clearly", visual weight).
+2. **A test claims a criterion by tagging itself** `[Criterion("SR-P7")]`.
+3. **The gate enforces the inverse direction.** `EveryInScopeExecutableCriterionHasEvidence`
+   walks the registry and **fails the build for any criterion with no test**. This is the
+   whole point: without it, a rule nobody implemented is indistinguishable from one that
+   passes, and the board becomes decoration.
+4. **Manual criteria require a recorded sign-off** in `manual-signoff.json` — a name, a date,
+   and what was actually looked at. Reaching their milestone with an empty entry fails the
+   gate. They are never auto-passed.
+5. **`currentMilestone` is the throttle.** Only criteria due at or before it are enforced, so
+   the gate tightens as work lands. **Declaring a milestone complete = bumping that field and
+   getting green.** That is the definition of done, mechanically.
+6. `docs/conformance.md` is regenerated on every run — the current state, readable without
+   running anything.
+
+### 14.2 Honesty rules
+
+These exist because the failure mode of any conformance system is a green board that lies.
+
+1. **Never mark something `manual` to dodge writing a test.** `manual` is for things that
+   genuinely cannot be asserted, and each one carries a `manualNote` justifying it. The list
+   should stay short; if it grows, that is a smell, not progress.
+2. **Never write an assertion that technically passes without proving the claim.** Asserting a
+   CSS property exists does not prove "visually de-emphasised" — that is why SR-R10 is manual.
+3. **Pushing a milestone out is legitimate; leaving a criterion unproven is not.** If a rule
+   is not ready, move its milestone and say so. Silence is the thing being forbidden.
+4. **A stale sign-off is worse than none.** If the UI changes materially after a manual
+   criterion was signed off, delete the entry.
+5. The gate can only verify that a criterion's referenced spec **section exists** — not that
+   its statement still matches the prose. Keeping those in sync is a review responsibility,
+   and claiming otherwise would be exactly the false assurance this mechanism exists to avoid.

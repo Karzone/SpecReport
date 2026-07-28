@@ -1,0 +1,227 @@
+{
+  "$comment": [
+    "Machine-checkable exit criteria derived from docs/SPEC.md. See SPEC 14.",
+    "",
+    "kind:  'executable' = a test must prove it, and the gate FAILS if no test does.",
+    "       'manual'     = needs human or visual judgement; tracked and reported, never",
+    "                      auto-passed. Keep this list short and honest - the temptation is",
+    "                      to mark hard things manual to make the board green.",
+    "",
+    "milestone: the milestone by which the criterion must hold. The gate only enforces",
+    "       criteria at or below `currentMilestone`, so advancing that field is what",
+    "       tightens the gate. Declaring a milestone done = bumping it and getting green.",
+    "",
+    "Every `spec` value must match a real section heading in SPEC.md - a meta-test checks it."
+  ],
+
+  "currentMilestone": "M0",
+  "milestones": ["M0", "M1", "M2", "M3", "M4", "M5", "M6"],
+
+  "criteria": [
+    {
+      "id": "SR-C6", "spec": "3.5", "kind": "executable", "milestone": "M0",
+      "statement": "SpecReport.Capture declares no package dependency beyond Reqnroll and the BCL."
+    },
+    {
+      "id": "SR-C8", "spec": "3.5", "kind": "executable", "milestone": "M0",
+      "statement": "The Capture assembly file name ends in .ReqnrollPlugin.dll so Reqnroll auto-loads it."
+    },
+    {
+      "id": "SR-F1", "spec": "10", "kind": "executable", "milestone": "M0",
+      "statement": "Fixture #1 is real Reqnroll output covering every case the M0 milestone lists."
+    },
+    {
+      "id": "SR-F2", "spec": "10", "kind": "executable", "milestone": "M0",
+      "statement": "The sample suite fails exactly the scenarios it intends to fail - no accidental failures."
+    },
+
+    {
+      "id": "SR-H1", "spec": "3.4", "kind": "executable", "milestone": "M1",
+      "statement": "HTTP exchanges attribute to the correct step under 4-way parallel async execution."
+    },
+    {
+      "id": "SR-H2", "spec": "3.4", "kind": "executable", "milestone": "M1",
+      "statement": "Exchanges made outside any step land in the labelled 'outside steps' bucket, never dropped and never misattributed."
+    },
+
+    {
+      "id": "SR-P1", "spec": "4.3", "kind": "executable", "milestone": "M2",
+      "statement": "Step keywords are resolved through the gherkinDocument AST join, not guessed from pickle text."
+    },
+    {
+      "id": "SR-P2", "spec": "4.3", "kind": "executable", "milestone": "M2",
+      "statement": "Localized Gherkin keywords survive parsing; styling keys off keywordType, not keyword string equality."
+    },
+    {
+      "id": "SR-P3", "spec": "4.2", "kind": "executable", "milestone": "M2",
+      "statement": "Feature -> Rule -> Scenario grouping is preserved; scenarios under different Rules never merge."
+    },
+    {
+      "id": "SR-P4", "spec": "4.3", "kind": "executable", "milestone": "M2",
+      "statement": "Background steps are identifiable as Background rather than anonymous leading steps."
+    },
+    {
+      "id": "SR-P5", "spec": "4.3", "kind": "executable", "milestone": "M2",
+      "statement": "Hook steps are modelled as first-class timeline rows distinct from Gherkin steps."
+    },
+    {
+      "id": "SR-P6", "spec": "4.3", "kind": "executable", "milestone": "M2",
+      "statement": "Hook rows are labelled from hook type + tagExpression, since hook.name is always empty."
+    },
+    {
+      "id": "SR-P7", "spec": "4.4", "kind": "executable", "milestone": "M2",
+      "statement": "Stream-reported SKIPPED wins over inference; inference applies only where the stream is silent and inferred skips are marked as such."
+    },
+    {
+      "id": "SR-P8", "spec": "4.5", "kind": "executable", "milestone": "M2",
+      "statement": "Retried scenarios group by testCaseId and count once, using the last attempt as the outcome."
+    },
+    {
+      "id": "SR-P9", "spec": "6.2", "kind": "executable", "milestone": "M2",
+      "statement": "Two byte-identical Scenario Outline example rows resolve to distinct scenario identities."
+    },
+    {
+      "id": "SR-P10", "spec": "7.1", "kind": "executable", "milestone": "M2",
+      "statement": "A truncated NDJSON stream parses best-effort without throwing, and reports what it skipped."
+    },
+    {
+      "id": "SR-P11", "spec": "7.1", "kind": "executable", "milestone": "M2",
+      "statement": "Unknown envelope types and unknown JSON properties are ignored rather than fatal."
+    },
+    {
+      "id": "SR-P12", "spec": "4.3", "kind": "executable", "milestone": "M2",
+      "statement": "Data tables and doc strings attached to steps survive parsing intact."
+    },
+    {
+      "id": "SR-P13", "spec": "4.1", "kind": "executable", "milestone": "M2",
+      "statement": "The run timestamp comes from testRunStarted, never from meta (which has none)."
+    },
+    {
+      "id": "SR-P14", "spec": "8", "kind": "executable", "milestone": "M2",
+      "statement": "Attachment bodies are spooled to disk during parse so peak memory stays O(largest attachment)."
+    },
+
+    {
+      "id": "SR-C1", "spec": "3.1", "kind": "executable", "milestone": "M3",
+      "statement": "The renderer's only input is Cucumber Messages NDJSON."
+    },
+    {
+      "id": "SR-C2", "spec": "3.1", "kind": "executable", "milestone": "M3",
+      "statement": "A run recorded without SpecReport.Capture still produces a complete timeline report."
+    },
+    {
+      "id": "SR-C3", "spec": "3.2", "kind": "executable", "milestone": "M3",
+      "statement": "HTTP evidence is detected by the in-payload $specreport http/1 discriminator."
+    },
+    {
+      "id": "SR-C4", "spec": "3.2", "kind": "executable", "milestone": "M3",
+      "statement": "A JSON attachment with no discriminator degrades to a plain JSON view instead of being mistaken for evidence."
+    },
+    {
+      "id": "SR-C5", "spec": "3.1", "kind": "executable", "milestone": "M3",
+      "statement": "A runmeta/1 attachment surfaces its key/values in the report header."
+    },
+    {
+      "id": "SR-R1", "spec": "8", "kind": "executable", "milestone": "M3",
+      "statement": "The emitted HTML issues zero network requests - no CDN, font, image or fetch URL."
+    },
+    {
+      "id": "SR-R2", "spec": "8", "kind": "executable", "milestone": "M3",
+      "statement": "Run data is escaped such that a scenario named with a closing script tag cannot execute."
+    },
+    {
+      "id": "SR-R3", "spec": "4.2", "kind": "executable", "milestone": "M3",
+      "statement": "Failed scenarios render expanded and passing ones collapsed by default."
+    },
+    {
+      "id": "SR-R7", "spec": "7.1", "kind": "executable", "milestone": "M3",
+      "statement": "Degraded input produces a visible banner stating what was skipped or incomplete."
+    },
+    {
+      "id": "SR-R9", "spec": "5.2", "kind": "executable", "milestone": "M3",
+      "statement": "Redaction and truncation markers are always rendered, never silently omitted."
+    },
+    {
+      "id": "SR-X1", "spec": "7", "kind": "executable", "milestone": "M3",
+      "statement": "Exit code is 0 when a report is produced (even with warnings) and 2 only for no input or zero valid envelopes."
+    },
+
+    {
+      "id": "SR-C7", "spec": "3.5", "kind": "executable", "milestone": "M4",
+      "statement": "With no screenshot provider registered, capture takes no screenshots and raises no error."
+    },
+    {
+      "id": "SR-S1", "spec": "8", "kind": "executable", "milestone": "M4",
+      "statement": "Sensitive request/response headers are redacted at capture time."
+    },
+    {
+      "id": "SR-S2", "spec": "8", "kind": "executable", "milestone": "M4",
+      "statement": "Sensitive query-string parameters are redacted at capture time."
+    },
+    {
+      "id": "SR-S3", "spec": "8", "kind": "executable", "milestone": "M4",
+      "statement": "Sensitive JSON body keys are redacted at any nesting depth."
+    },
+    {
+      "id": "SR-S4", "spec": "8", "kind": "executable", "milestone": "M4",
+      "statement": "Secrets planted in captured traffic never appear anywhere in the emitted NDJSON."
+    },
+    {
+      "id": "SR-S5", "spec": "8", "kind": "executable", "milestone": "M4",
+      "statement": "Bodies over the size cap are truncated with an explicit visible marker."
+    },
+    {
+      "id": "SR-S6", "spec": "8", "kind": "executable", "milestone": "M4",
+      "statement": "Screenshots are re-encoded to bounded JPEG before attachment."
+    },
+    {
+      "id": "SR-S7", "spec": "8", "kind": "executable", "milestone": "M4",
+      "statement": "The README states plainly what redaction does NOT cover."
+    },
+
+    {
+      "id": "SR-M1", "spec": "6.1", "kind": "executable", "milestone": "M5",
+      "statement": "A directory of NDJSON files merges into one logical run rather than N runs."
+    },
+    {
+      "id": "SR-M2", "spec": "6.1", "kind": "executable", "milestone": "M5",
+      "statement": "Runs are ordered by testRunStarted.timestamp, not filename or argument order."
+    },
+    {
+      "id": "SR-M3", "spec": "6.3", "kind": "executable", "milestone": "M5",
+      "statement": "The matrix distinguishes 'not run' from 'skipped', and 'not run' is excluded from flaky detection."
+    },
+    {
+      "id": "SR-M4", "spec": "4.5", "kind": "executable", "milestone": "M5",
+      "statement": "A scenario that failed then passed within one run is reported as flaky-within-run."
+    },
+
+    {
+      "id": "SR-R5", "spec": "8", "kind": "executable", "milestone": "M6",
+      "statement": "Expand/collapse, filters and the lightbox are fully keyboard operable, and Escape closes the lightbox."
+    },
+    {
+      "id": "SR-R8", "spec": "8", "kind": "executable", "milestone": "M6",
+      "statement": "The scale budget holds: 5,000 scenarios / 50,000 steps / 30 runs opens in under 3 seconds."
+    },
+    {
+      "id": "SR-X2", "spec": "7.1", "kind": "executable", "milestone": "M6",
+      "statement": "Oversized output auto-degrades to external assets or omitted attachments rather than aborting."
+    },
+    {
+      "id": "SR-R4", "spec": "8", "kind": "manual", "milestone": "M6",
+      "statement": "Status is conveyed by glyph AND text, never by colour alone.",
+      "manualNote": "Partly automatable (assert status text present in DOM), but 'reads clearly to a colour-blind user' needs a human look."
+    },
+    {
+      "id": "SR-R6", "spec": "8", "kind": "manual", "milestone": "M6",
+      "statement": "Both light and dark themes meet WCAG AA contrast.",
+      "manualNote": "Automatable with an axe/contrast pass later; until that exists, a human checks it and signs off in the release checklist."
+    },
+    {
+      "id": "SR-R10", "spec": "4.3", "kind": "manual", "milestone": "M6",
+      "statement": "Hook rows are visually de-emphasised relative to Gherkin step rows.",
+      "manualNote": "Pure visual judgement. Deliberately NOT faked with a CSS-property assertion, which would prove nothing about how it looks."
+    }
+  ]
+}

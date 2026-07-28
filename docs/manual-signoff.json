@@ -1,0 +1,18 @@
+{
+  "$comment": [
+    "Human sign-off for criteria in docs/criteria.json marked kind='manual'.",
+    "",
+    "These cannot be machine-verified, so the gate refuses to pass them on reaching their",
+    "milestone until a person has looked and recorded the result here. An empty list is the",
+    "honest state until someone actually checks.",
+    "",
+    "Add an entry only after genuinely performing the check:",
+    "  { \"id\": \"SR-R6\", \"milestone\": \"M6\", \"signedOffBy\": \"name\",",
+    "    \"date\": \"YYYY-MM-DD\", \"notes\": \"what you looked at and what you saw\" }",
+    "",
+    "A sign-off is scoped to the milestone it was given at. If the UI changes materially",
+    "after sign-off, delete the entry - a stale tick is worse than no tick."
+  ],
+
+  "signoffs": []
+}

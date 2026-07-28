@@ -8,6 +8,7 @@
     <Project Path="src/SpecReport.Core/SpecReport.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/SpecReport.Conformance/SpecReport.Conformance.csproj" />
     <Project Path="tests/SpecReport.Core.Tests/SpecReport.Core.Tests.csproj" />
   </Folder>
 </Solution>
