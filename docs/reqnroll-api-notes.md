@@ -94,3 +94,81 @@ will not change. But the *message stream itself is complete*: Reqnroll emits
 - Note: plain hook classes in a referenced assembly also need
   `bindingAssemblies` config in the consumer's reqnroll.json — the runtime-plugin route with
   `CustomizeScenarioDependencies` avoids forcing config on consumers. Decide in M3 design.
+
+---
+
+# Part 2 — Observed from a real run (M0, 2026-07-28)
+
+Everything above was read from docs and source. Everything below was **measured** against
+`tests/fixtures/sample-run-01.ndjson` (Reqnroll 3.3.4 / MSTest / .NET 10, protocolVersion
+30.1.0). Where the two disagree, this section wins.
+
+## 6. Confirmed as assumed
+
+| Assumption | Result |
+|---|---|
+| Attachments are step-scoped | ✅ All 10 attachments carry **both** `testStepId` and `testCaseStartedId` |
+| Media type inferred from file extension | ✅ `.png`→`image/png`, `.json`→`application/json`. No way to set a custom one → the in-payload `$specreport` discriminator (SPEC §3.2) is necessary, not merely convenient |
+| `WriteLine` output | ✅ `text/x.cucumber.log+plain`, `contentEncoding: IDENTITY`. **One attachment envelope per `WriteLine` call** |
+| Binary attachments | ✅ `contentEncoding: BASE64`, whole file inlined, no size cap |
+| Skipped steps reach the stream | ✅ 7 × `testStepFinished` with `SKIPPED`, despite step hooks not firing for them. SPEC §4.4's inference stays a fallback |
+| Failure detail | ✅ `exception: { type, message, stackTrace }`; `type` is the real exception class name (`BasketAssertionException`), so it is worth surfacing |
+| Hook steps are distinguishable | ✅ `testCase.testSteps[]` entries carry **either** `pickleStepId` **or** `hookId` — never both. SPEC §4.3 hook rows are implementable exactly as designed |
+| `meta` has no timestamp | ✅ Run time comes from `testRunStarted.timestamp` (+ it also carries an `id`) |
+| Pickle steps carry no keyword | ✅ Only `text`, `type` (Context/Action/Outcome), and `astNodeIds` → the `gherkinDocument` AST join is **mandatory**, as SPEC §4.3 assumed |
+| `Rule:` needs its own grouping slot | ✅ Appears as `feature.children[].rule`, with its **own** `children` (including a per-rule Background). One nesting level |
+
+## 7. Differs from what the docs implied — spec-affecting
+
+1. **`hook.name` is empty.** The `hook` envelope carries `id`, `type`
+   (`BEFORE_TEST_RUN` / `BEFORE_TEST_CASE` / `AFTER_TEST_CASE` / `AFTER_TEST_RUN`), and
+   `tagExpression` — but **no method name**. Hook rows in the timeline therefore cannot be
+   labelled "FailingBeforeHook". Label from type + tag expression instead:
+   `Before hook` / `Before hook (@fail-before-hook)`.
+2. **Gherkin-derived ids are deterministic; execution ids are not.** Measured across two
+   consecutive runs: all 28 `pickle.id`s identical, all 28 `testCase.id`s different.
+   Pickle/AST ids are content hashes (32-char hex); execution ids are random per run
+   (22-char base64url). Consequence for SPEC §6.2: derived identity
+   (URI + rule + name + params) stays **primary** because it survives step-text edits, but
+   `pickle.id` is a valid corroborating key and a fast path when feature files are unchanged.
+3. **Outline example rows are directly identifiable.** An outline pickle's `astNodeIds` is
+   `[scenarioNodeId, exampleRowId]` — the row id is right there, and **two byte-identical
+   example rows get different ids**. SPEC §6.2's "example-row index tiebreaker" is therefore
+   cheaper than expected: use `astNodeIds[1]`. Keep the positional index as the fallback for
+   streams where it is absent.
+4. **AST step keywords carry a trailing space** — `"Given "`, `"Angenommen "`. Trim for
+   display. `keywordType` (`Context`/`Action`/`Outcome`/`Conjunction`) is the styling key, as
+   SPEC §4.3 specified — verified against German: `Angenommen`→Context, `Wenn`→Action,
+   `Dann`→Outcome.
+5. **`meta.ci` is absent** on a local run. The report must degrade gracefully rather than
+   assume commit/branch/build metadata exists — which is exactly why the `runmeta/1`
+   attachment (SPEC §3.1) earns its place.
+6. **`testCaseStarted.attempt` exists (`0`), but `workerId` is NEVER populated — including
+   under parallel execution.** The sample runs with
+   `[assembly: Parallelize(Scope = ExecutionScope.MethodLevel)]`, and the fixture proves the
+   run really was concurrent: `testCaseStarted` timestamps arrive **out of monotonic order**
+   (…716830400 then …706765000), which only happens across threads. Yet all 28 entries lack
+   `workerId`. **Conclusion: no worker/shard attribution is available from Reqnroll today.**
+   Any "which worker ran this" UI is off the table until Reqnroll emits it; shard identity has
+   to come from the `runmeta/1` attachment instead (SPEC §3.1).
+7. **The fixture is a parallel-execution fixture.** That is deliberate and worth keeping: it
+   means the parser is exercised against interleaved `testStepStarted`/`testStepFinished`
+   envelopes from the very first test, rather than a tidy sequential stream that would hide
+   ordering bugs until much later.
+
+## 8. Opportunities noticed
+
+- **`suggestion` envelope**: for undefined steps Reqnroll emits a ready-made C# step-definition
+  snippet. Rendering "here's the binding you're missing" directly in the report is a cheap,
+  genuinely useful feature the built-in HTML formatter doesn't surface. Candidate for M3.
+- **Build-time `.ndjson` files** appear in `obj/Debug/<tfm>/Features/*.feature.ndjson` — these
+  are per-feature Gherkin artifacts from code generation, *not* the runtime stream. Don't
+  confuse them with the formatter output; `.gitignore` excludes them.
+
+## 9. Environment gotcha
+
+`InvariantGlobalization=true` **breaks Reqnroll at startup**:
+`ConfigurationLoader.DefaultFeatureLanguage` calls `CultureInfo.GetCultureInfo("en-us")`, which
+throws under invariant mode and aborts the whole run before a single scenario executes. Culture
+data is load-bearing for any Reqnroll consumer — and doubly so for SpecReport, which supports
+localized Gherkin. `Directory.Build.props` pins it to `false` with a comment.

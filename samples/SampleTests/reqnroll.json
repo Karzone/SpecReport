@@ -1,0 +1,10 @@
+{
+  "$schema": "https://schemas.reqnroll.net/reqnroll-config-latest.json",
+  "formatters": {
+    "message": { "outputFilePath": "specreport-messages.ndjson" },
+    "html": { "outputFilePath": "reqnroll-builtin.html" }
+  },
+  "language": {
+    "feature": "en"
+  }
+}

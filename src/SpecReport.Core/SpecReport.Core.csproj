@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackageId>SpecReport.Core</PackageId>
+    <Description>Parses Cucumber Messages (NDJSON) from a Reqnroll test run into a run model and renders a self-contained HTML report. Embeddable library behind the specreport CLI.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+</Project>

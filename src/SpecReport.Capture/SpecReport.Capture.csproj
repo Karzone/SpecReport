@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- netstandard2.0: this assembly loads inside the consumer's test process, so it must
+         support the widest possible range of consumer target frameworks. See SPEC 3.5. -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+
+    <!-- Reqnroll only auto-loads plugin assemblies whose FILE NAME ends in
+         `.ReqnrollPlugin.dll`. The package id stays SpecReport.Capture.
+         See docs/reqnroll-api-notes.md 5. -->
+    <AssemblyName>SpecReport.Capture.ReqnrollPlugin</AssemblyName>
+    <RootNamespace>SpecReport.Capture</RootNamespace>
+
+    <IsPackable>true</IsPackable>
+    <PackageId>SpecReport.Capture</PackageId>
+    <Description>Optional Reqnroll runtime plugin that attaches screenshots and HTTP request/response detail to the right test steps, for rendering by the specreport CLI. Depends on Reqnroll only - never pulls a browser or HTTP framework into your test project.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SPEC 3.5 HARD RULE: Reqnroll and the BCL, nothing else. Never reference Playwright,
+         Selenium, RestSharp, Refit, or any other driver/client library. Enforced by the
+         DependencyRule target below. -->
+    <PackageReference Include="Reqnroll" Version="3.3.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <!-- Mechanical enforcement of the SPEC 3.5 dependency rule: the build fails if anyone
+       adds a package reference beyond the allow-list. -->
+  <PropertyGroup>
+    <!-- Reqnroll = the one framework dependency. NETStandard.Library = the BCL itself
+         (implicit for netstandard2.0). SourceLink = build-time only, not a runtime dep. -->
+    <CaptureAllowedDependencies>Reqnroll;NETStandard.Library;Microsoft.SourceLink.GitHub</CaptureAllowedDependencies>
+  </PropertyGroup>
+
+  <Target Name="EnforceCaptureDependencyRule" BeforeTargets="Build">
+    <ItemGroup>
+      <_AllowedDep Include="$(CaptureAllowedDependencies)" />
+      <_DisallowedDep Include="@(PackageReference)" Exclude="@(_AllowedDep)" />
+    </ItemGroup>
+    <Error Condition="'@(_DisallowedDep)' != ''"
+           Text="SPEC 3.5 violation: SpecReport.Capture may only reference Reqnroll and the BCL, but found: @(_DisallowedDep). A driver or HTTP library here would force it on every consumer - use a provider delegate (screenshots) or a DelegatingHandler (HTTP) instead. If this dependency is genuinely build-time-only, add it to CaptureAllowedDependencies with a comment saying why." />
+  </Target>
+
+</Project>

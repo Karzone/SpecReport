@@ -266,6 +266,9 @@ their parameter values.
   common CI failure) would otherwise render as "all steps skipped, no error anywhere."
   Hook rows are visually de-emphasised, collapsed when passed, **always expanded when
   failed**, with the exception shown. This also gives hook-scoped evidence a home.
+  **Labelling:** the `hook` envelope has an *empty* `name` (measured — api-notes §7.1), so
+  rows are labelled from `type` + `tagExpression`: `Before hook`, `After hook
+  (@fail-after-hook)`. Never promise a method name the stream doesn't carry.
 - Gherkin keyword (`Given`/`When`/`Then`/`And`/`But`) rendered distinctly. Keywords come from
   the `gherkinDocument` AST joined via `astNodeIds` — the pickle carries text but not
   keywords. **Styling keys off Cucumber's `keywordType`** (Context/Action/Outcome/
@@ -298,7 +301,10 @@ Untreated, a retried scenario triple-counts in the summary and poisons the flaky
 - Earlier attempts render as expandable "attempt 1 of 3" sub-entries with their own timelines.
 - Failed-then-passed within one run is surfaced as **flaky-within-run** — a stronger signal
   than cross-run flipping, and nearly free once attempts are modelled.
-- `testCaseStarted.workerId` is display metadata (which worker/shard), never an ordering key.
+- ~~`testCaseStarted.workerId` is display metadata~~ — **cut.** Measured: Reqnroll never
+  populates `workerId`, even under parallel execution (api-notes §7.6). Worker/shard
+  attribution must come from the `runmeta/1` attachment (§3.1) or not at all. Do not build UI
+  against a field the stream doesn't carry.
 
 ---
 
@@ -345,14 +351,20 @@ So the unit is explicit:
 - Runs are ordered by `testRunStarted.timestamp` (UTC), not filename or argument order.
 
 ### 6.2 Scenario identity across runs
-Cucumber `pickle` ids are not stable between runs, so:
+Measured (api-notes §7.2): **`pickle.id` *is* stable across runs** — it's a content hash —
+while `testCase.id` / `testCaseStarted.id` are random per run. But a pickle hash changes
+whenever the scenario's own text changes, so it can't be the primary key: fixing a typo in a
+step would read as "scenario deleted, new scenario appeared" and blow a hole in the matrix.
 
 ```
-identity = feature URI + rule name + scenario name + example-row values + example-row index
+identity  = feature URI + rule name + scenario name + example-row values + example-row discriminator
+corroborating = pickle.id   (exact-match fast path when feature files are unchanged)
 ```
 
-The row index breaks ties between *identical* example rows (common in real suites; without it
-the matrix silently merges them). Renaming a scenario reads as removed+added — documented
+The row discriminator is `astNodeIds[1]` — an outline pickle's `astNodeIds` is
+`[scenarioNodeId, exampleRowId]`, and **byte-identical example rows still get distinct ids**
+(measured), which is what stops the matrix silently merging them. Positional row index is the
+fallback where that id is absent. Renaming a scenario reads as removed+added — documented
 limitation; an `--identity-map` is a v2 escape hatch.
 
 ### 6.3 Views

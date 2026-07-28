@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/SampleTests/SampleTests.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/SpecReport.Capture/SpecReport.Capture.csproj" />
+    <Project Path="src/SpecReport.Cli/SpecReport.Cli.csproj" />
+    <Project Path="src/SpecReport.Core/SpecReport.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SpecReport.Core.Tests/SpecReport.Core.Tests.csproj" />
+  </Folder>
+</Solution>
