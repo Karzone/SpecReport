@@ -1,4 +1,4 @@
-# ReqLens — Specification (v1)
+# SpecSight — Specification (v1)
 
 **Status:** DRAFT — for review. Nothing is implemented yet.
 **Date:** 2026-07-28
@@ -7,7 +7,7 @@
 
 ## 1. The one-sentence goal
 
-> **ReqLens turns a Reqnroll test run into a single self-contained HTML report that shows every
+> **SpecSight turns a Reqnroll test run into a single self-contained HTML report that shows every
 > scenario as a step-wise Gherkin timeline, with screenshots hanging off UI steps and full
 > HTTP request/response detail hanging off API steps — for one run or many.**
 
@@ -43,7 +43,7 @@ entire duplicated UI surface from the project, and it means a scenario that does
    ┌──────────────────────────────────────────┐
    │  Your Reqnroll test project              │
    │                                          │
-   │  ReqLens.Capture  (optional)             │
+   │  SpecSight.Capture  (optional)             │
    │   ├─ AfterStep hook → screenshot         │
    │   └─ HttpClient DelegatingHandler        │
    │        → HTTP exchange attachment        │
@@ -54,8 +54,8 @@ entire duplicated UI surface from the project, and it means a scenario that does
                     │                         THE ONLY CONTRACT
                     ▼
    ┌──────────────────────────────────────────┐
-   │  reqlens report *.ndjson -o report.html  │
-   │   ├─ ReqLens.Report  (parse + model)     │
+   │  specsight report *.ndjson -o report.html  │
+   │   ├─ SpecSight.Report  (parse + model)     │
    │   └─ evidence renderers by media type    │
    └────────────────┬─────────────────────────┘
                     ▼
@@ -67,10 +67,10 @@ entire duplicated UI surface from the project, and it means a scenario that does
 The renderer reads **only** the NDJSON stream that Reqnroll's built-in `message` formatter
 already produces. Consequences, all deliberate:
 
-1. **`reqlens` works on any Reqnroll project** with the message formatter enabled, even one
-   that has never heard of `ReqLens.Capture`. You get the Gherkin timeline, statuses,
+1. **`specsight` works on any Reqnroll project** with the message formatter enabled, even one
+   that has never heard of `SpecSight.Capture`. You get the Gherkin timeline, statuses,
    durations, and errors for free.
-2. **`ReqLens.Capture` is pure enrichment.** It adds attachments the renderer knows how to
+2. **`SpecSight.Capture` is pure enrichment.** It adds attachments the renderer knows how to
    render richly. It is optional, and the two packages version independently.
 3. **We never fork or patch Reqnroll.** No reliance on internal APIs; no reverse-engineering
    TRX or console output.
@@ -79,38 +79,45 @@ already produces. Consequences, all deliberate:
 
 ### 3.2 The evidence contract (media types)
 
-`ReqLens.Capture` writes attachments; `ReqLens.Report` dispatches on media type:
+`SpecSight.Capture` writes attachments; `SpecSight.Report` dispatches on them:
 
-| Media type | Renderer | Produced by |
-|---|---|---|
-| `image/png`, `image/jpeg` | Inline thumbnail → click for lightbox | Capture, or any hook that attaches an image |
-| `application/vnd.reqlens.http+json` | HTTP exchange panel (see §5.2) | Capture's `DelegatingHandler` |
-| `text/plain` | Log line, monospace, collapsed if long | `IReqnrollOutputHelper.WriteLine` |
-| anything else | Filename + size + download link | anyone |
+| Evidence | Detected by | Renderer | Produced by |
+|---|---|---|---|
+| Screenshot | media type `image/png` / `image/jpeg` | Inline thumbnail → lightbox | Capture, or any hook that attaches an image |
+| HTTP exchange | media type `application/json` **and** top-level `"$specsight": "http/1"` field | HTTP exchange panel (§5.2) | Capture's `DelegatingHandler` |
+| Log line | media type `text/x.cucumber.log+plain` or `text/plain` | Monospace line, collapsed if long | `IReqnrollOutputHelper.WriteLine` |
+| anything else | — | Filename + size + download link | anyone |
 
-Dispatching on media type — rather than on a ReqLens-specific envelope — is what keeps the
-renderer useful to people who only use half the toolkit.
+Two notes on why the HTTP row is shaped that way:
+
+- Reqnroll's `AddAttachment(filePath)` **infers the media type from the file extension** and
+  offers no way to set a custom one, so a vendor media type like
+  `application/vnd.specsight.http+json` is unreachable via the public API. The discriminator
+  therefore lives **inside the payload**: a versioned `"$specsight": "http/1"` field. JSON
+  attachments without it render as plain JSON — unknown things degrade, never break.
+- Dispatching on the attachment itself — rather than on a SpecSight-specific envelope — is what
+  keeps the renderer useful to people who only use half the toolkit.
 
 ### 3.3 Repo / package layout
 
 ```
-ReqLens/
+SpecSight/
 ├─ README.md, LICENSE (MIT), .gitignore, Directory.Build.props
 ├─ docs/SPEC.md                  ← this file
-├─ ReqLens.sln
+├─ SpecSight.sln
 ├─ src/
-│  ├─ ReqLens.Capture/           → NuGet: ReqLens.Capture   (Reqnroll runtime plugin)
-│  ├─ ReqLens.Report/            → NuGet: ReqLens.Report    (library: parse + render)
-│  └─ ReqLens.Cli/               → NuGet: ReqLens.Cli       (dotnet tool `reqlens`)
+│  ├─ SpecSight.Capture/           → NuGet: SpecSight.Capture   (Reqnroll runtime plugin)
+│  ├─ SpecSight.Report/            → NuGet: SpecSight.Report    (library: parse + render)
+│  └─ SpecSight.Cli/               → NuGet: SpecSight.Cli       (dotnet tool `specsight`)
 ├─ tests/
-│  ├─ ReqLens.Report.Tests/      (golden-file tests over fixture .ndjson)
+│  ├─ SpecSight.Report.Tests/      (golden-file tests over fixture .ndjson)
 │  └─ fixtures/                  (recorded NDJSON: passing, failing, skipped, ui, api, multi-run)
 └─ samples/
    └─ SampleTests/               (a real Reqnroll project — proves the pipeline end to end)
 ```
 
-Three shipped packages, one sample, one test project. `ReqLens.Cli` is a thin argument-parsing
-shell over `ReqLens.Report` so the library stays embeddable (e.g. an MSBuild task later).
+Three shipped packages, one sample, one test project. `SpecSight.Cli` is a thin argument-parsing
+shell over `SpecSight.Report` so the library stays embeddable (e.g. an MSBuild task later).
 
 ---
 
@@ -149,12 +156,17 @@ For an expanded scenario, each step in order:
   panel inline. Evidence is lazy-rendered so a 500-step report stays responsive.
 - Data tables and doc strings attached to a step render as a proper table / preformatted block.
 
-### 4.4 Skipped steps — a known Reqnroll gap we must handle
-Reqnroll's `AfterStep` hook does not fire for steps skipped after an earlier failure
-(reqnroll/Reqnroll#892), and such steps can be under-reported in the message stream.
-**The renderer must infer skips** rather than trust the data: within a scenario, every step
-following the first failed step is rendered as skipped if the stream gives us nothing better.
-This is a rendering rule, written down here because it will look like a bug to a future reader.
+### 4.4 Skipped steps — verified behaviour
+Reqnroll's `AfterStep`/`BeforeStep` hooks do **not** fire for steps skipped after an earlier
+failure — reqnroll/Reqnroll#892, closed *by design*, will not change. However, the **message
+stream itself is complete**: Reqnroll emits `testStepFinished` with status `SKIPPED` for those
+steps regardless of hooks. Two rules follow:
+
+1. The renderer's primary source for skip status is the stream. As a *defensive fallback only*
+   (e.g. a crashed run producing a truncated stream), steps after the first failure with no
+   `testStepFinished` are rendered as skipped.
+2. `SpecSight.Capture` must never assume its step hooks fire once per step — evidence capture is
+   best-effort per executed step, and the report must not depend on hook coverage.
 
 ---
 
@@ -216,14 +228,14 @@ Runs are ordered by their `meta` timestamp, not by filename or CLI argument orde
 ## 7. CLI surface
 
 ```bash
-reqlens report <paths...> [options]
+specsight report <paths...> [options]
 ```
 
 `<paths>` accepts files, globs, or directories (recursed for `*.ndjson`).
 
 | Option | Default | Purpose |
 |---|---|---|
-| `-o, --output <path>` | `reqlens-report.html` | Output file |
+| `-o, --output <path>` | `specsight-report.html` | Output file |
 | `--assets <inline\|external>` | `inline` | `external` writes images to `<output>_files/` |
 | `--title <text>` | derived | Report title |
 | `--max-inline-bytes <n>` | `50MB` | Abort with guidance rather than emit an unusable file |
@@ -248,9 +260,14 @@ These are hard requirements, not polish.
 3. **A body redaction hook** (`Func<HttpContent, string>`) lets teams scrub PII from bodies.
 4. **Screenshots default to on-failure-only.** Per-step capture is opt-in, because a 200-scenario
    suite with per-step screenshots produces a report nobody can open.
-5. **The HTML makes zero network requests.** No CDN, no fonts, no telemetry. It must open from
+5. **Screenshots are captured as size-bounded JPEG.** Reqnroll inlines every attachment into
+   the NDJSON as base64 with no size cap and no external-file option (verified — see
+   `reqnroll-api-notes.md` §3), so every attachment byte lands in a file that CI archives.
+   Capture re-encodes screenshots to JPEG at a configurable quality (default ~40) before
+   attaching. Externalizing assets is the renderer's job (`--assets external`), not Reqnroll's.
+6. **The HTML makes zero network requests.** No CDN, no fonts, no telemetry. It must open from
    a `file://` URL on a locked-down machine and render identically.
-6. **All run data is injected as a JSON data island and escaped**, so a scenario named
+7. **All run data is injected as a JSON data island and escaped**, so a scenario named
    `</script><img onerror=...>` cannot execute in the report.
 
 ---
@@ -266,7 +283,9 @@ Written down so they can be *added later on purpose* rather than drifting in dur
 - No live/streaming report during a run.
 - No visual regression / baseline image diffing.
 - No custom Reqnroll formatter plugin — we consume the built-in `message` formatter's output.
-  (Revisit only if post-run file consumption proves insufficient.)
+  This non-goal is now verified as correct, not just cautious: the `ICucumberMessageFormatter`
+  extension point exists but Reqnroll's docs explicitly warn it may change significantly even
+  in minor versions. File-based consumption is the stable seam.
 
 ---
 
@@ -277,7 +296,7 @@ Written down so they can be *added later on purpose* rather than drifting in dur
 | **M0** | Scaffold + sample Reqnroll project | `dotnet test` on `samples/` emits a valid `.ndjson`; that file is committed as fixture #1 |
 | **M1** | NDJSON → `RunModel` | Parser handles pass/fail/skip/outline/datatable/docstring/attachment; golden tests green |
 | **M2** | Single-run HTML | Summary + scenario list + step timeline + errors + filters. **First genuinely useful release.** |
-| **M3** | Evidence + Capture package | Screenshot and HTTP panels render; `ReqLens.Capture` auto-loads on package reference; redaction proven by test |
+| **M3** | Evidence + Capture package | Screenshot and HTTP panels render; `SpecSight.Capture` auto-loads on package reference; redaction proven by test |
 | **M4** | Multi-run | Trend, matrix, flaky list, drill-down |
 | **M5** | Ship | README with real screenshots, CI build, NuGet publish, semver 1.0.0 |
 
@@ -290,8 +309,10 @@ want out of a milestone plan.
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Runtime | .NET 10 | Matches the consumer's stack; they already have the SDK |
-| Distribution | `dotnet tool install -g ReqLens.Cli` | Zero-friction for .NET teams |
+| Runtime | CLI/Report: .NET 10. Capture: **netstandard2.0** | Capture must load inside any consumer's test process; netstandard2.0 is the widest net (and what Reqnroll's plugin docs prescribe) |
+| Capture assembly name | `SpecSight.Capture.ReqnrollPlugin` (package id stays `SpecSight.Capture`) | Reqnroll only auto-loads plugin assemblies whose file name ends in `.ReqnrollPlugin.dll` — verified, see api notes §5 |
+| Reqnroll support range | v3.0+ (v3.3+ for output-path `{timestamp}` etc.) | Formatters shipped in 3.0; substitution variables in 3.3 |
+| Distribution | `dotnet tool install -g SpecSight.Cli` | Zero-friction for .NET teams |
 | Report UI | **Hand-written HTML + CSS + vanilla JS**, embedded as a resource, hydrated from a JSON data island | Keeps the repo a pure .NET build with no Node toolchain in CI, and guarantees the single-file/no-CDN property. The interactions here are expand, filter, lightbox, tab — a framework would not earn its complexity. Escape hatch: if the aggregate views outgrow this, swap in Preact behind the same data-island contract. |
 | JSON | `System.Text.Json` with source-generated contexts | No extra dependency; fast on large streams |
 | Tests | xUnit + golden-file HTML snapshots | Report regressions are exactly what snapshot tests are good at |
@@ -301,8 +322,11 @@ want out of a milestone plan.
 
 ## 12. Open questions for review
 
-1. **Name** — `ReqLens` (packages `ReqLens.Capture` / `ReqLens.Report`, CLI `reqlens`). Locked in
-   now, cheap to change before the first commit.
+1. ~~**Name**~~ — RESOLVED: **SpecSight** (packages `SpecSight.Capture` / `SpecSight.Report` /
+   `SpecSight.Cli`, CLI `specsight`). Package ids verified free on nuget.org 2026-07-28.
+   Discoverability for "reqnroll report" searches comes from package tags/description
+   (`reqnroll`, `html-report`, `gherkin`, `living-documentation`, `test-report`), which
+   nuget.org indexes alongside the id.
 2. **Is M2 (no evidence panels) genuinely useful to you**, or is the HTTP panel the reason you
    want this at all? If the latter, M3 moves ahead of M2's filter/search polish.
 3. **How do your API tests issue HTTP calls today?** The `DelegatingHandler` approach only sees

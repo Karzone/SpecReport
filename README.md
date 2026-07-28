@@ -1,4 +1,4 @@
-# ReqLens
+# SpecSight
 
 **A rich HTML report for [Reqnroll](https://reqnroll.net) test runs — Gherkin step timelines with
 screenshots for UI tests and full HTTP request/response detail for API tests. One run or many.**
@@ -13,7 +13,7 @@ screenshots for UI tests and full HTTP request/response detail for API tests. On
 Point it at the Cucumber Messages file Reqnroll already knows how to emit:
 
 ```bash
-reqlens report TestResults/*.ndjson -o report.html
+specsight report TestResults/*.ndjson -o report.html
 ```
 
 …and get one self-contained HTML file — no server, no CDN, no network calls — showing every
@@ -29,11 +29,11 @@ Two independently useful pieces:
 
 | Package | Role |
 |---|---|
-| `ReqLens.Cli` | `dotnet tool` that turns Cucumber Messages NDJSON into HTML. Works on **any** Reqnroll project — you do not need the capture package. |
-| `ReqLens.Capture` | Optional. Reference it from your test project and it attaches screenshots and HTTP exchanges to the right steps automatically. |
+| `SpecSight.Cli` | `dotnet tool` that turns Cucumber Messages NDJSON into HTML. Works on **any** Reqnroll project — you do not need the capture package. |
+| `SpecSight.Capture` | Optional. Reference it from your test project and it attaches screenshots and HTTP exchanges to the right steps automatically. |
 
 The only contract between them is [Cucumber Messages](https://github.com/cucumber/messages) —
-the format Reqnroll's built-in `message` formatter already produces. ReqLens does not fork,
+the format Reqnroll's built-in `message` formatter already produces. SpecSight does not fork,
 patch, or reach into Reqnroll internals.
 
 ## Licence
