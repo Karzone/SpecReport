@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/samples/">
     <Project Path="samples/CaptureSampleTests/CaptureSampleTests.csproj" />
+    <Project Path="samples/FullStackSample/FullStackSample.csproj" />
     <Project Path="samples/SampleTests/SampleTests.csproj" />
   </Folder>
   <Folder Name="/spikes/">

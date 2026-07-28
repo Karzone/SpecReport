@@ -293,6 +293,7 @@ as a CI artifact — a secret that reaches the file has already leaked. On by de
 | **Values under innocuous keys** | A token under `"data"` or `"value"` looks like anything else. Name-based matching cannot know. |
 | **URL path segments** | `/reset/9f3a…` is redacted as a query parameter, not as a path segment. |
 | **Anything inside a screenshot** | A logged-in page showing a session token, PII, or a payment form is captured as pixels. Nothing scans it. |
+| **Secrets written in your feature files** | Step text is rendered exactly as authored. `Given I log in with password "hunter2"` appears in the report because it is part of the *test*, not the traffic. Keep credentials in step definitions or configuration. |
 | **Your own `WriteLine` output** | Passed through untouched. |
 
 Use `CaptureOptions.SensitiveNameFragments` to extend matching, `BodyScrubber` for a last-pass

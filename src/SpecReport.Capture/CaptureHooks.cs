@@ -218,7 +218,20 @@ public sealed class ScenarioCapture
         return new System.Net.Http.HttpClient(handler);
     }
 
-    /// <summary>Wraps an existing handler chain so factory-configured pipelines keep working.</summary>
-    public System.Net.Http.DelegatingHandler CreateHandler(CaptureOptions? options = null)
-        => new SpecReportHttpHandler(Buffer, options);
+    /// <summary>
+    /// A capturing handler ready to use.
+    ///
+    /// It comes with a real inner handler already attached, so `new HttpClient(CreateHandler())`
+    /// works - the obvious thing a consumer writes. Returning a bare DelegatingHandler instead
+    /// fails at the first request with "The inner handler has not been assigned", which says
+    /// nothing about what to do next.
+    ///
+    /// Pass <paramref name="innerHandler"/> to wrap an existing pipeline, or assign
+    /// <c>InnerHandler</c> afterwards - either is fine before the first request.
+    /// </summary>
+    public System.Net.Http.DelegatingHandler CreateHandler(
+        System.Net.Http.HttpMessageHandler? innerHandler = null,
+        CaptureOptions? options = null)
+        => new SpecReportHttpHandler(
+            innerHandler ?? new System.Net.Http.HttpClientHandler(), Buffer, options ?? Options);
 }
