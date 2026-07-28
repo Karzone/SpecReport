@@ -210,6 +210,17 @@ two points where it could creep in:
    register one. Optional convenience adapter packages (`SpecReport.Capture.Playwright`, …)
    are a **post-v1** nicety — each would be ~50 lines wrapping the same delegate — and must
    never become a requirement.
+3. **Screenshots are an optional artifact; HTTP exchanges are the backend evidence.**
+   The asymmetry is deliberate:
+
+   | Evidence | When it's captured |
+   |---|---|
+   | Screenshot (frontend) | **Only if** a provider is registered, and then per the mode: `Off` / `OnFailure` (default) / `EveryStep`. No provider → no screenshots, no error, timeline still complete. |
+   | HTTP exchange (backend) | **Whenever the handler is wired** — attaching it *is* the opt-in, and the request/response detail is the point of wiring it. Per-exchange body capture stays governed by the §8 caps and redaction. |
+
+   A frontend suite with no provider registered still gets its full Gherkin timeline; a
+   backend suite gets rich HTTP panels with zero screenshot machinery involved. Mixed suites
+   configure each independently.
 2. **HTTP.** Virtually every modern .NET HTTP library — Refit, RestSharp (v107+), Flurl,
    `IHttpClientFactory` typed clients — is built on `HttpClient`/`HttpMessageHandler`, so the
    single `DelegatingHandler` of §3.4 covers all of them; only the one-line wiring recipe
@@ -410,7 +421,8 @@ Hard requirements, not polish.
    security guarantee is worse than none.
 3. **Body capture is size-capped** (default 64 KB per body) with explicit truncation markers:
    `… truncated, 1.2 MB total`.
-4. **Screenshots default to on-failure-only** and are **re-encoded to bounded JPEG** at
+4. **Screenshots are opt-in twice over** — they require a registered provider (§3.5) *and*
+   default to on-failure-only — and are **re-encoded to bounded JPEG** at
    capture time (configurable quality ≈40, max dimension cap) — Reqnroll inlines every
    attachment byte into the NDJSON as base64 with no size cap and no external option
    (verified), so unbounded PNGs would produce 100+ MB artifacts.
