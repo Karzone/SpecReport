@@ -4,7 +4,7 @@ Facts checked against docs.reqnroll.net and the reqnroll/Reqnroll source on GitH
 Version context: latest Reqnroll release **v3.3.4** (2026-03-23). Formatters require v3.0+;
 output-path substitution variables require v3.3+.
 
-## 1. Formatters (the NDJSON source SpecSight consumes)
+## 1. Formatters (the NDJSON source SpecReport consumes)
 
 - Built into the core `Reqnroll` package — **no extra NuGet reference needed**. Transitive
   deps: `Cucumber.Messages` 32.3.1, `Cucumber.HtmlFormatter` 23.1.0.
@@ -61,16 +61,16 @@ will not change. But the *message stream itself is complete*: Reqnroll emits
   - The renderer/CLI is the place to externalize (`--assets external`), matching the Cucumber
     schema's intended consumer-side `ExternalAttachment` pattern.
 - **Media type is inferred from the file extension** (`FileExtensionToMIMETypeMap`); the API
-  offers no way to set a custom media type. So `application/vnd.specsight.http+json` is
+  offers no way to set a custom media type. So `application/vnd.specreport.http+json` is
   impossible via the public API → the evidence contract needs an **in-payload discriminator**
   (see SPEC §3.2 revision).
 - `WriteLine` output becomes an attachment with `mediaType: "text/x.cucumber.log+plain"`,
   `contentEncoding: IDENTITY`.
 - Runner-level display of attachments works on MSTest/NUnit; **xUnit lacks runner attachment
   support** — but the Cucumber Messages envelope is still emitted either way, which is all
-  SpecSight needs.
+  SpecReport needs.
 
-## 4. Hooks (used by SpecSight.Capture)
+## 4. Hooks (used by SpecReport.Capture)
 
 - `[BeforeStep]`/`[AfterStep]`/`[BeforeScenario]`/`[AfterScenario]` — instance methods,
   constructor injection, `async Task` supported (never `async void`).
@@ -83,11 +83,11 @@ will not change. But the *message stream itself is complete*: Reqnroll emits
   without reflection. We don't need it: attachment→step correlation is handled by Reqnroll
   (see §3), so Capture never joins ids itself.
 
-## 5. Runtime plugin packaging (SpecSight.Capture)
+## 5. Runtime plugin packaging (SpecReport.Capture)
 
 - Implement `Reqnroll.Plugins.IRuntimePlugin` + `[assembly: RuntimePlugin(typeof(...))]`.
 - **The assembly file name must end in `.ReqnrollPlugin.dll`** or Reqnroll won't auto-load it.
-  → assembly name `SpecSight.Capture.ReqnrollPlugin`, NuGet package id stays `SpecSight.Capture`.
+  → assembly name `SpecReport.Capture.ReqnrollPlugin`, NuGet package id stays `SpecReport.Capture`.
 - Target **netstandard2.0** for maximum consumer compatibility.
 - DI hooks: `RegisterGlobalDependencies` (add new), `CustomizeScenarioDependencies`
   (per-scenario services — where the HTTP capture handler's step-context accessor lives).
