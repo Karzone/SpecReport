@@ -36,6 +36,13 @@ The only contract between them is [Cucumber Messages](https://github.com/cucumbe
 the format Reqnroll's built-in `message` formatter already produces. SpecReport does not fork,
 patch, or reach into Reqnroll internals.
 
+**Stack-agnostic by rule:** works with any test runner (MSTest, NUnit, xUnit) and any
+UI/HTTP framework. Screenshots come from a one-line provider delegate you register (Playwright,
+Selenium, anything that yields bytes); HTTP capture is a standard `DelegatingHandler`, which
+covers every `HttpClient`-based library (Refit, RestSharp v107+, Flurl, typed clients).
+`SpecReport.Capture` itself depends on Reqnroll and nothing else — it will never pull a
+browser or HTTP framework into your test project.
+
 ## Licence
 
 MIT — see [LICENSE](LICENSE).

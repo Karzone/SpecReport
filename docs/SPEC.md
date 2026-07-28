@@ -180,9 +180,45 @@ worse than no tool at all. So:
 **This design is milestone M1's spike subject** — proven under 4-way parallel async execution
 before anything is built on it.
 
----
+### 3.5 Framework adaptability — a hard rule, not a hope
 
-## 4. Single-run report
+SpecReport must work with **any** stack a Reqnroll project can be built on. That is trivially
+true for the report side and requires one deliberate rule on the capture side:
+
+**Report side (`SpecReport.Core` / `SpecReport.Cli`): agnostic by construction.** They consume
+only the NDJSON file — they never load into, reference, or care about the consumer's process.
+Test runner (MSTest / NUnit / xUnit), UI driver, HTTP library, target framework: all
+irrelevant.
+
+**Capture side (`SpecReport.Capture`): zero framework references, adapters via delegates.**
+The rule: `SpecReport.Capture` references **only** `Reqnroll` and the BCL — never Playwright,
+Selenium, RestSharp, Refit, or any other driver/client library. Coupling is inverted at the
+two points where it could creep in:
+
+1. **Screenshots.** Capturing one needs the consumer's driver handle (`IPage`, `IWebDriver`,
+   …), so Capture defines a provider the consumer registers in a `[BeforeScenario]` hook:
+
+   ```csharp
+   // Playwright consumer
+   capture.UseScreenshotProvider(ct => _page.ScreenshotAsync(...));
+   // Selenium consumer
+   capture.UseScreenshotProvider(ct => Task.FromResult(
+       ((ITakesScreenshot)_driver).GetScreenshot().AsByteArray));
+   ```
+
+   One delegate, any driver, no SpecReport dependency on either. API-only suites simply never
+   register one. Optional convenience adapter packages (`SpecReport.Capture.Playwright`, …)
+   are a **post-v1** nicety — each would be ~50 lines wrapping the same delegate — and must
+   never become a requirement.
+2. **HTTP.** Virtually every modern .NET HTTP library — Refit, RestSharp (v107+), Flurl,
+   `IHttpClientFactory` typed clients — is built on `HttpClient`/`HttpMessageHandler`, so the
+   single `DelegatingHandler` of §3.4 covers all of them; only the one-line wiring recipe
+   differs per library, and the README ships a recipe per stack. Stacks *not* built on
+   `HttpClient` (legacy `HttpWebRequest`, gRPC, raw sockets) are outside v1's handler and are
+   exactly what the v2 `DiagnosticListener` candidate (§9) exists for.
+
+Enforced mechanically: `SpecReport.Capture.csproj` gets a CI check that its package
+dependencies are `Reqnroll` and nothing else.
 
 ### 4.1 Header / summary band
 Run timestamp (from `testRunStarted` — the `meta` envelope has no timestamp), total duration,
@@ -459,10 +495,10 @@ After M3 the tool is demo-ably differentiated; after M4 it is genuinely useful e
 2. ~~Is a plain timeline report useful without evidence?~~ — RESOLVED by review: no — the
    built-in `html` formatter already covers it (§1.1). Milestones reordered so evidence
    ships first.
-3. **OPEN — How do your API tests issue HTTP calls today?** The v1 handler only sees traffic
-   through an `HttpClient` it is attached to. RestSharp / Refit / a hand-rolled wrapper each
-   need a (small) different wiring recipe; knowing the real stack decides which recipe ships
-   in the README first.
+3. **OPEN — Which HTTP stack recipe ships first in the README?** Any `HttpClient`-based
+   library works with the §3.4 handler (see §3.5); the question is only which wiring recipe
+   (plain `HttpClient` / `IHttpClientFactory` / RestSharp / Refit / Flurl) is written and
+   tested first — decided by whichever the author's own suites use.
 4. **OPEN — Public NuGet or internal feed?** Changes licence posture, CI, and README.
 
 ---
