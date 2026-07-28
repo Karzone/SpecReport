@@ -16,6 +16,7 @@
     <!-- SR-H3 inspects CaptureHooks by reflection. A direct reference brings Reqnroll along
          transitively; Assembly.LoadFrom on the built dll cannot resolve it. -->
     <ProjectReference Include="../../src/SpecReport.Capture/SpecReport.Capture.csproj" />
+    <ProjectReference Include="../../src/SpecReport.Core/SpecReport.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,15 @@
+{"meta":{"protocolVersion":"30.1.0","implementation":{"name":"Reqnroll","version":"3.3.4"},"runtime":{"name":"dotNet","version":"10.0.8"},"os":{"name":"Windows"},"cpu":{"name":"x64"},"someFutureMetaField":"ignored"}}
+{"testRunStarted":{"timestamp":{"seconds":1785250000,"nanos":0},"id":"run-1"}}
+{"gherkinDocument":{"uri":"Features/Retry.feature","feature":{"location":{"line":1},"language":"en","keyword":"Feature","name":"Retryable","children":[{"scenario":{"id":"sc1","keyword":"Scenario","name":"Flaky scenario","steps":[{"id":"st1","keyword":"Given ","keywordType":"Context","text":"a flaky precondition"},{"id":"st2","keyword":"Then ","keywordType":"Outcome","text":"it eventually passes"}]}}]}}}
+{"pickle":{"id":"pk1","uri":"Features/Retry.feature","name":"Flaky scenario","language":"en","steps":[{"id":"ps1","text":"a flaky precondition","type":"Context","astNodeIds":["st1"]},{"id":"ps2","text":"it eventually passes","type":"Outcome","astNodeIds":["st2"]}],"tags":[],"astNodeIds":["sc1"]}}
+{"testCase":{"id":"tc1","pickleId":"pk1","testSteps":[{"id":"ts1","pickleStepId":"ps1"},{"id":"ts2","pickleStepId":"ps2"}]}}
+{"aFutureEnvelopeTypeThatDoesNotExistYet":{"id":"future-1","payload":{"anything":true}}}
+{"testCaseStarted":{"id":"tcs1","testCaseId":"tc1","attempt":0,"timestamp":{"seconds":1785250001,"nanos":0}}}
+{"testStepFinished":{"testCaseStartedId":"tcs1","testStepId":"ts1","testStepResult":{"status":"PASSED","duration":{"seconds":0,"nanos":1000000}},"timestamp":{"seconds":1785250002,"nanos":0},"anUnknownPropertyOnAKnownEnvelope":"ignored"}}
+{"testStepFinished":{"testCaseStartedId":"tcs1","testStepId":"ts2","testStepResult":{"status":"FAILED","message":"Expected pass but it flaked","duration":{"seconds":0,"nanos":2000000},"exception":{"type":"FlakyException","message":"Expected pass but it flaked","stackTrace":"   at Retry.Steps.ItEventuallyPasses()"}},"timestamp":{"seconds":1785250003,"nanos":0}}}
+{"testCaseFinished":{"testCaseStartedId":"tcs1","willBeRetried":true,"timestamp":{"seconds":1785250004,"nanos":0}}}
+{"testCaseStarted":{"id":"tcs2","testCaseId":"tc1","attempt":1,"timestamp":{"seconds":1785250005,"nanos":0}}}
+{"testStepFinished":{"testCaseStartedId":"tcs2","testStepId":"ts1","testStepResult":{"status":"PASSED","duration":{"seconds":0,"nanos":1000000}},"timestamp":{"seconds":1785250006,"nanos":0}}}
+{"testStepFinished":{"testCaseStartedId":"tcs2","testStepId":"ts2","testStepResult":{"status":"PASSED","duration":{"seconds":0,"nanos":3000000}},"timestamp":{"seconds":1785250007,"nanos":0}}}
+{"testCaseFinished":{"testCaseStartedId":"tcs2","willBeRetried":false,"timestamp":{"seconds":1785250008,"nanos":0}}}
+{"testRunFinished":{"success":true,"timestamp":{"seconds":1785250009,"nanos":0}}}

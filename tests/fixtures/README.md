@@ -13,7 +13,7 @@ is tested against bytes Reqnroll actually produces.
 | Reqnroll | 3.3.4 (MSTest), protocolVersion 30.1.0 |
 | Runtime | .NET 10.0.8, Windows x64 |
 | Size | ~445 KB, 505 lines |
-| Outcome | 29 scenarios: 20 passed, 7 failed, 1 pending, 1 undefined |
+| Outcome | 28 scenarios: 19 passed, 7 failed, 1 pending, 1 undefined |
 
 **The 7 failures are deliberate.** The sample exists to produce a realistic stream, not to go
 green. Every failing scenario is tagged (`@known-fail`, `@fail-before-hook`, `@fail-after-hook`)
@@ -79,3 +79,22 @@ ground truth: 33 step-scoped exchanges whose `stepText` must match their URL tok
 It also plants two real secrets (a bearer token and an `api_key` query parameter) plus a
 `Set-Cookie` response header, so redaction can be proven by their **absence** rather than by
 grepping for the word "redacted".
+
+---
+
+## truncated-run-03.ndjson
+
+The killed-CI-run case (SPEC §7.1). `sample-run-01` cut at 72% with the final line left
+half-written: no `testRunFinished`, scenarios that started and never finished, one unparseable
+tail line. Proves the parser degrades honestly instead of refusing the run someone most needs a
+report for.
+
+## retry-run-04.ndjson
+
+**Hand-authored, not recorded** — Reqnroll will not produce a retry on demand, and SR-P8 is
+about parsing semantics rather than Reqnroll behaviour. Two `testCaseStarted` envelopes share
+one `testCaseId`: attempt 0 fails, attempt 1 passes. The scenario must count once, take the
+last attempt as its outcome, and register as flaky-within-run.
+
+It also carries a made-up envelope type and unknown properties on known envelopes, so
+forward-compatibility (SR-P11) is proven rather than assumed.
