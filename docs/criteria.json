@@ -14,7 +14,7 @@
     "Every `spec` value must match a real section heading in SPEC.md - a meta-test checks it."
   ],
 
-  "currentMilestone": "M4",
+  "currentMilestone": "M5",
   "milestones": ["M0", "M1", "M2", "M3", "M4", "M5", "M6"],
 
   "criteria": [

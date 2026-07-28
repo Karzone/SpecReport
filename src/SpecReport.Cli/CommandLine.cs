@@ -46,23 +46,14 @@ public static class CommandLine
             return ExitNothingToDo;
         }
 
-        var inputs = ResolveInputs(parsed.Paths).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var groups = ResolveGroups(parsed.Paths);
 
-        if (inputs.Count == 0)
+        if (groups.Count == 0)
         {
             error.WriteLine(
                 "specreport: no .ndjson files found. Enable Reqnroll's `message` formatter in " +
                 "reqnroll.json, then point this at the file it writes.");
             return ExitNothingToDo;
-        }
-
-        // v1 renders a single run; merging is M5. Extra files are REPORTED rather than
-        // silently ignored - quiet truncation reads as "covered everything" when it did not.
-        if (inputs.Count > 1)
-        {
-            error.WriteLine(
-                $"specreport: {inputs.Count} files given; rendering the first ({inputs[0]}). " +
-                $"Multi-run reports arrive in a later release.");
         }
 
         var options = new ReportOptions
@@ -73,21 +64,28 @@ public static class CommandLine
         };
 
         using var spool = new AttachmentSpool();
-        var run = RunParser.Parse(inputs[0], spool);
+
+        if (groups.Count > 1)
+            return RunMultiple(groups, options, spool, parsed, output);
+
+        var group = groups[0];
+        var shards = group.Files.Select(f => RunParser.Parse(f, spool)).ToList();
+        var run = RunMerger.Merge(shards);
         var scenarioCount = run.AllScenarios.Count();
 
         if (scenarioCount == 0 && run.Diagnostics.UnreadableLines > 0)
         {
             error.WriteLine(
-                $"specreport: '{inputs[0]}' contained no readable envelopes " +
+                $"specreport: '{group.Files[0]}' contained no readable envelopes " +
                 $"({run.Diagnostics.UnreadableLines} unreadable line(s)).");
             return ExitNothingToDo;
         }
 
         ReportWriter.Write(run, spool, options);
 
+        var merged = group.Files.Count > 1 ? $" (merged from {group.Files.Count} files)" : "";
         output.WriteLine(
-            $"specreport: {scenarioCount} scenario(s) -> {Path.GetFullPath(options.OutputPath)}");
+            $"specreport: {scenarioCount} scenario(s){merged} -> {Path.GetFullPath(options.OutputPath)}");
 
         if (run.Diagnostics.Summary() is { } warning)
             output.WriteLine($"specreport: warning - {warning}");
@@ -104,40 +102,77 @@ public static class CommandLine
         return ExitOk;
     }
 
-    private static IEnumerable<string> ResolveInputs(IReadOnlyList<string> paths)
+    private static int RunMultiple(
+        IReadOnlyList<RunGroup> groups, ReportOptions options, AttachmentSpool spool,
+        Arguments parsed, TextWriter output)
     {
+        var model = MultiRunBuilder.Build(groups, spool);
+        ReportWriter.WriteMultiRun(model, spool, options);
+
+        var flaky = model.Flaky.Count();
+        output.WriteLine(
+            $"specreport: {model.Runs.Count} runs, {model.Series.Count} scenarios, " +
+            $"{flaky} flaky -> {Path.GetFullPath(options.OutputPath)}");
+
+        if (parsed.Open) TryOpen(options.OutputPath, output);
+        return ExitOk;
+    }
+
+    /// <summary>
+    /// Turns command-line paths into logical runs.
+    ///
+    /// A DIRECTORY is one run - every .ndjson inside it merges. That is the convention that
+    /// makes sharded CI work: four agents write four files into one folder, and they are one
+    /// run, not four (SPEC §6.1). A FILE is its own run, so the simple case still behaves the
+    /// obvious way.
+    /// </summary>
+    private static List<RunGroup> ResolveGroups(IReadOnlyList<string> paths)
+    {
+        var groups = new List<RunGroup>();
+
         foreach (var path in paths)
         {
-            if (File.Exists(path))
-            {
-                yield return path;
-                continue;
-            }
-
             if (Directory.Exists(path))
             {
-                foreach (var file in Directory
-                             .EnumerateFiles(path, "*.ndjson", SearchOption.AllDirectories)
-                             .OrderBy(f => f, StringComparer.Ordinal))
-                {
-                    yield return file;
-                }
+                var files = Directory
+                    .EnumerateFiles(path, "*.ndjson", SearchOption.AllDirectories)
+                    .OrderBy(f => f, StringComparer.Ordinal)
+                    .ToList();
+
+                if (files.Count > 0)
+                    groups.Add(new RunGroup(Path.GetFileName(Path.TrimEndingDirectorySeparator(path)), files));
+
                 continue;
             }
 
-            // Not a file or directory: treat it as a glob relative to its own directory.
-            var directory = Path.GetDirectoryName(path);
-            var pattern = Path.GetFileName(path);
-            if (string.IsNullOrEmpty(pattern)) continue;
+            foreach (var file in ExpandFiles(path))
+                groups.Add(new RunGroup(Path.GetFileNameWithoutExtension(file), [file]));
+        }
 
-            var searchIn = string.IsNullOrEmpty(directory) ? "." : directory;
-            if (!Directory.Exists(searchIn)) continue;
+        return groups;
+    }
 
-            foreach (var file in Directory.EnumerateFiles(searchIn, pattern)
-                                          .OrderBy(f => f, StringComparer.Ordinal))
-            {
-                yield return file;
-            }
+    private static IEnumerable<string> ExpandFiles(string path)
+    {
+        if (File.Exists(path))
+        {
+            yield return path;
+            yield break;
+        }
+
+        // Not a file or a directory: treat it as a glob relative to its own directory, so
+        // `runs/*.ndjson` works even when the shell did not expand it.
+        var directory = Path.GetDirectoryName(path);
+        var pattern = Path.GetFileName(path);
+        if (string.IsNullOrEmpty(pattern)) yield break;
+
+        var searchIn = string.IsNullOrEmpty(directory) ? "." : directory;
+        if (!Directory.Exists(searchIn)) yield break;
+
+        foreach (var file in Directory.EnumerateFiles(searchIn, pattern)
+                                      .OrderBy(f => f, StringComparer.Ordinal))
+        {
+            yield return file;
         }
     }
 

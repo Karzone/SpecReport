@@ -279,5 +279,45 @@ dialog.lightbox button {
   border-radius: 6px; padding: 5px 12px; cursor: pointer; font: inherit; font-size: 13px;
 }
 
+/* ---- multi-run ------------------------------------------------------------------------- */
+
+.trend { display: flex; gap: 6px; align-items: flex-end; height: 150px; margin: 10px 0 4px; }
+.trend .bar {
+  flex: 1 1 0; min-width: 34px; max-width: 90px; height: 100%;
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+  position: relative;
+}
+.trend .fill {
+  width: 100%; background: var(--passed); border-radius: 4px 4px 0 0; min-height: 3px;
+}
+.trend .fill.has-failures {
+  background: linear-gradient(to bottom, var(--failed) 0 5px, var(--passed) 5px);
+}
+.trend .pct { position: absolute; top: -2px; font: 11px var(--mono); color: var(--muted); }
+.trend .lbl {
+  font-size: 10.5px; color: var(--muted); margin-top: 5px;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.matrix-scroll { overflow-x: auto; }
+table.matrix { border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+table.matrix th, table.matrix td { border: 1px solid var(--border); padding: 3px 8px; }
+table.matrix th { background: var(--surface-2); font-weight: 600; text-align: left; }
+table.matrix td.sc { text-align: left; max-width: 380px; }
+table.matrix td.cell { text-align: center; width: 34px; font-size: 13px; }
+td.cell.passed { color: var(--passed); }
+td.cell.failed { color: var(--failed); background: color-mix(in srgb, var(--failed) 10%, transparent); }
+td.cell.skipped, td.cell.unknown { color: var(--skipped); }
+td.cell.pending { color: var(--pending); }
+td.cell.undefined, td.cell.ambiguous { color: var(--undefined); }
+/* "did not run" must not read as a result: no colour, no fill, just a dash. */
+td.cell.notrun { color: var(--border); background: repeating-linear-gradient(
+  45deg, transparent, transparent 4px, color-mix(in srgb, var(--border) 40%, transparent) 4px,
+  color-mix(in srgb, var(--border) 40%, transparent) 5px); }
+
+details.run-detail > summary { background: var(--surface-2); }
+details.run-detail .wrap { padding: 0; }
+details.run-detail header h1 { font-size: 18px; }
+
 .empty { color: var(--muted); text-align: center; padding: 40px 0; }
 footer { color: var(--muted); font-size: 12px; text-align: center; margin-top: 36px; }

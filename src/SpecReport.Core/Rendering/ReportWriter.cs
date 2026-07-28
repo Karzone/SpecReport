@@ -34,10 +34,32 @@ public static class ReportWriter
     }
 
     public static string Render(ReportViewModel view) =>
+        Compose(view.Title, HtmlBuilder.BuildBody(view));
+
+    /// <summary>Renders a multi-run report: trend, flaky list, matrix, and per-run drill-down.</summary>
+    public static string RenderMultiRun(
+        MultiRunModel model, AttachmentSpool spool, ReportOptions options)
+    {
+        var title = options.Title ?? $"Test runs — {model.Runs.Count} runs";
+        return Compose(title, MultiRunHtmlBuilder.BuildBody(model, title, spool, options));
+    }
+
+    public static void WriteMultiRun(
+        MultiRunModel model, AttachmentSpool spool, ReportOptions options)
+    {
+        var html = RenderMultiRun(model, spool, options);
+
+        var directory = Path.GetDirectoryName(Path.GetFullPath(options.OutputPath));
+        if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
+
+        File.WriteAllText(options.OutputPath, html, new UTF8Encoding(false));
+    }
+
+    private static string Compose(string title, string body) =>
         Resource("report.html")
-            .Replace("{{TITLE}}", HtmlEscape(view.Title), StringComparison.Ordinal)
+            .Replace("{{TITLE}}", HtmlEscape(title), StringComparison.Ordinal)
             .Replace("{{STYLE}}", Resource("report.css"), StringComparison.Ordinal)
-            .Replace("{{BODY}}", HtmlBuilder.BuildBody(view), StringComparison.Ordinal)
+            .Replace("{{BODY}}", body, StringComparison.Ordinal)
             .Replace("{{SCRIPT}}", Resource("report.js"), StringComparison.Ordinal);
 
     /// <summary>
