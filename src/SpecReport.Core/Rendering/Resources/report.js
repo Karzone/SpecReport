@@ -23,7 +23,15 @@
     }
 
     if (filters.text) {
-      if ((scenario.getAttribute('data-text') || '').indexOf(filters.text) === -1) return false;
+      // Built lazily from the DOM on first search, then cached on the element. Shipping this
+      // as an attribute duplicated every step's text into the document - megabytes, on exactly
+      // the large runs where page weight matters most.
+      var hay = scenario._hay;
+      if (hay === undefined) {
+        hay = (scenario.textContent || '').toLowerCase();
+        scenario._hay = hay;
+      }
+      if (hay.indexOf(filters.text) === -1) return false;
     }
 
     return true;
@@ -72,45 +80,33 @@
     });
   });
 
-  /* ---- lightbox ------------------------------------------------------------------- */
+  /* ---- expand / collapse all ------------------------------------------------------- */
 
-  var box, boxImg, boxCap, items = [], at = 0;
+  var toggleAll = document.getElementById('toggle-all');
 
-  function ensure() {
-    if (box) return;
+  if (toggleAll) {
+    toggleAll.addEventListener('click', function () {
+      // With two levels of disclosure, opening everything by hand is tedious - but so is
+      // closing it again, so this is a toggle rather than two buttons.
+      var expanding = toggleAll.getAttribute('aria-pressed') !== 'true';
 
-    boxImg = document.createElement('img');
-    boxImg.alt = '';
-    boxCap = document.createElement('span');
+      Array.prototype.forEach.call(
+        document.querySelectorAll('details.scenario, details.step-block'),
+        function (d) { d.open = expanding; });
 
-    function button(label, onClick) {
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = label;
-      b.addEventListener('click', onClick);
-      return b;
-    }
-
-    var cap = document.createElement('div');
-    cap.className = 'cap';
-    cap.appendChild(button('‹ Prev', function () { move(-1); }));
-    cap.appendChild(boxCap);
-    cap.appendChild(button('Next ›', function () { move(1); }));
-    cap.appendChild(button('Close', function () { box.close(); }));
-
-    box = document.createElement('dialog');
-    box.className = 'lightbox';
-    box.appendChild(boxImg);
-    box.appendChild(cap);
-
-    // Arrow keys move; <dialog> gives Escape-to-close for free (SPEC 8.8).
-    box.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowLeft') { move(-1); e.preventDefault(); }
-      if (e.key === 'ArrowRight') { move(1); e.preventDefault(); }
+      toggleAll.setAttribute('aria-pressed', expanding);
+      toggleAll.textContent = expanding ? 'collapse all' : 'expand all';
     });
-
-    document.body.appendChild(box);
   }
+
+  /* ---- lightbox -------------------------------------------------------------------- */
+
+  // The dialog is in the markup, not built here: a native <dialog> opened with showModal()
+  // traps focus and closes on Escape with no script at all (SPEC 8.8).
+  var box = document.getElementById('lightbox');
+  var boxImg = document.getElementById('lightbox-img');
+  var boxCap = document.getElementById('lightbox-cap');
+  var items = [], at = 0, opener = null;
 
   function move(delta) {
     if (!items.length) return;
@@ -125,16 +121,34 @@
     boxCap.textContent = (img.alt || 'screenshot') + '  (' + (at + 1) + '/' + items.length + ')';
   }
 
-  document.addEventListener('click', function (e) {
-    var target = e.target;
-    if (!target || target.tagName !== 'IMG' || !target.closest('.shots')) return;
+  if (box) {
+    document.getElementById('lightbox-prev').addEventListener('click', function () { move(-1); });
+    document.getElementById('lightbox-next').addEventListener('click', function () { move(1); });
+    document.getElementById('lightbox-close').addEventListener('click', function () { box.close(); });
 
-    ensure();
-    items = Array.prototype.slice.call(target.closest('.shots').querySelectorAll('img'));
-    at = items.indexOf(target);
-    show();
-    box.showModal();
-  });
+    box.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowLeft') { move(-1); e.preventDefault(); }
+      if (e.key === 'ArrowRight') { move(1); e.preventDefault(); }
+    });
+
+    // Return focus where it came from, or a keyboard user is dumped at the top of the page.
+    box.addEventListener('close', function () {
+      if (opener && document.contains(opener)) opener.focus();
+      opener = null;
+    });
+
+    document.addEventListener('click', function (e) {
+      var button = e.target.closest ? e.target.closest('button.shot') : null;
+      if (!button) return;
+
+      var strip = button.closest('.shots');
+      items = Array.prototype.slice.call(strip.querySelectorAll('img'));
+      at = items.indexOf(button.querySelector('img'));
+      opener = button;
+      show();
+      box.showModal();
+    });
+  }
 
   apply();
 })();

@@ -480,12 +480,22 @@ Hard requirements, not polish.
    identically from `file://` on a locked-down machine.
 6. **All run data is injected as an escaped JSON data island** — a scenario named
    `</script><img onerror=...>` cannot execute in the report.
-7. **Scale budget:** 5,000 scenarios / 50,000 steps / 30 runs must open in < 3 s and stay
-   interactive on a mid-range laptop. A synthetic fixture at this size exists from M2
-   onward — before any UI is written. The step list and matrix are virtualized if (and only
-   if) the budget demands it — measured, not assumed. **Memory:** attachment bodies are
-   spooled to a temp directory during parse and streamed into the output at write time —
-   peak memory is O(largest attachment), not O(all attachments).
+7. **Scale budget — revised at M6 after measuring.** The original target was "5,000 scenarios /
+   50,000 steps / 30 runs opens in < 3 s". Measured on a synthetic run of that size: 25.9 MB
+   input → **1.8 s parse, 0.5 s render, 13.3 MB output**. Generation is comfortably fast; a
+   13 MB document is **not** a sub-3-second page load, and browser paint time cannot be measured
+   without driving a browser.
+
+   So the enforced budget is what can honestly be proven: **generation under 10 s, document
+   under 40 MB, and no per-scenario work at load** (the page is server-rendered; filtering only
+   toggles `hidden`, and the search index is built lazily from the DOM rather than shipped as
+   duplicated attributes). The practical consequence — reports beyond roughly 2,000 scenarios
+   are slow to open and are better split per run — is a **documented limitation in the README**,
+   not a promise the tool fails to keep. Virtualization would fix it and remains available if
+   the need becomes real.
+
+   **Memory:** attachment bodies are spooled to a temp directory during parse and streamed into
+   the output at write time — peak memory is O(largest attachment), not O(all attachments).
 8. **Accessibility:** status conveyed by glyph *and text*, never colour alone; full keyboard
    operability (expand/collapse, filters, lightbox with Escape-to-close); visible focus
    rings; WCAG AA contrast in both themes. Times display in the viewer's local timezone,

@@ -195,6 +195,11 @@ test **fails the build**. See [`docs/SPEC.md` §14](docs/SPEC.md) for how that w
 
 **Known limitations**, stated plainly:
 
+- **Very large runs produce a large report.** Measured: 5,000 scenarios / 50,000 steps generates
+  in about 2.4 seconds but yields a **13 MB** HTML file, which takes noticeably longer than a
+  moment to open. Up to roughly 2,000 scenarios (~5 MB) is comfortable. Beyond that, render each
+  run separately and use the multi-run view to compare them, or pass `--assets external` to keep
+  screenshots out of the document.
 - Nested/called steps produce no separate rows — their time and failures roll up into the outer
   step.
 - Renaming a scenario reads as "removed and added" in the multi-run matrix.

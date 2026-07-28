@@ -193,8 +193,16 @@ public sealed class M3Criteria : IDisposable
         // characters "onerror=" once the angle brackets and quotes around them are entities.
         // Asserting on the raw substring would fail on correctly-escaped output - which is
         // exactly what it did on the first run.
-        Assert.DoesNotContain("<img", html, StringComparison.OrdinalIgnoreCase);
+        // The hostile tags must not exist as MARKUP. Checked specifically rather than banning
+        // "<img" outright: the report legitimately contains its own <img> elements (the
+        // lightbox, screenshot thumbnails), and a blanket ban would fail on correct output -
+        // which is exactly what it did once the lightbox moved into the markup.
+        Assert.DoesNotContain("<img src=x", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("<b>markup", html, StringComparison.OrdinalIgnoreCase);
+
+        // Every <img> in the document is one of ours, with an alt attribute.
+        foreach (Match img in Regex.Matches(html, @"<img\b[^>]*>", RegexOptions.IgnoreCase))
+            Assert.Contains("alt=", img.Value, StringComparison.OrdinalIgnoreCase);
 
         // The page has exactly one script element - the embedded behaviour script - and one
         // closing tag to match. Hostile content did not open or close one.

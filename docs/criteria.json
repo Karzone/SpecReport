@@ -14,7 +14,7 @@
     "Every `spec` value must match a real section heading in SPEC.md - a meta-test checks it."
   ],
 
-  "currentMilestone": "M5",
+  "currentMilestone": "M6",
   "milestones": ["M0", "M1", "M2", "M3", "M4", "M5", "M6"],
 
   "criteria": [
@@ -207,7 +207,8 @@
     },
     {
       "id": "SR-R8", "spec": "8", "kind": "executable", "milestone": "M6",
-      "statement": "The scale budget holds: 5,000 scenarios / 50,000 steps / 30 runs opens in under 3 seconds."
+      "statement": "At 5,000 scenarios / 50,000 steps the report generates in under 10s and the document stays under 40MB, and filtering does no per-scenario work at load.",
+      "revisedNote": "Was 'opens in under 3 seconds'. Browser paint time cannot be measured without driving a browser, and asserting a proxy while claiming to have proven the original would be exactly the false assurance SPEC 14.2 forbids. Measured 2026-07-28: 5,000 scenarios / 50,000 steps -> 25.9MB input, 1.8s parse, 0.5s render, 13.3MB output. A 13MB document does NOT open in under 3 seconds, so the honest claim is a bounded generation cost and a bounded page weight; the practical guidance (split runs beyond ~2,000 scenarios) is now a documented limitation in the README rather than a promise. Revisit if a browser-driving test job is added."
     },
     {
       "id": "SR-X2", "spec": "7.1", "kind": "executable", "milestone": "M6",

@@ -166,7 +166,30 @@ button:focus-visible, summary:focus-visible {
 /* ---- steps ---------------------------------------------------------------------------- */
 
 .step { display: flex; gap: 9px; align-items: baseline; padding: 5px 0; border-bottom: 1px solid transparent; }
-.step + .step { border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent); }
+.step + .step, .step-block + .step-block, .step + .step-block, .step-block + .step {
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+/* Second disclosure level: a step that carries detail expands to reveal it. Without this,
+   opening a scenario dumps every stack trace and HTTP panel it owns at once. */
+.step-block > summary.step {
+  cursor: pointer; list-style: none; padding-left: 16px; position: relative;
+}
+.step-block > summary.step::-webkit-details-marker { display: none; }
+.step-block > summary.step::before {
+  content: "›"; position: absolute; left: 2px; top: 4px;
+  color: var(--muted); font-size: 13px; line-height: 1;
+  transition: transform .12s ease; transform-origin: 50% 55%;
+}
+.step-block[open] > summary.step::before { transform: rotate(90deg); }
+.step-block > summary.step:hover { background: color-mix(in srgb, var(--surface-2) 70%, transparent); }
+.step-detail { padding-bottom: 4px; }
+
+/* Evidence counts on the row, so a collapsed step still says what it holds. */
+.ev-count {
+  flex: 0 0 auto; font-size: 10.5px; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 3px; padding: 0 5px;
+}
 .step .glyph { flex: 0 0 auto; width: 15px; text-align: center; font-size: 12px; }
 .step.passed .glyph { color: var(--passed); }
 .step.failed .glyph { color: var(--failed); }
@@ -221,10 +244,14 @@ pre.ds {
 .ev-badge:hover { color: var(--text); border-color: var(--accent); }
 
 .shots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 7px; }
-.shots img {
-  max-width: 190px; max-height: 120px; border: 1px solid var(--border);
-  border-radius: 6px; cursor: zoom-in; background: var(--surface-2);
+/* A real button element, not a click-handler on a thumbnail: an image is not focusable, so the
+   lightbox would be unreachable by keyboard entirely (SPEC 8.8). */
+.shots button.shot {
+  padding: 0; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface-2); cursor: zoom-in; line-height: 0;
 }
+.shots button.shot:hover { border-color: var(--accent); }
+.shots img { max-width: 190px; max-height: 120px; border-radius: 5px; display: block; }
 
 .http { border: 1px solid var(--border); border-radius: 6px; margin-top: 7px; overflow: hidden; }
 .http > .line {
