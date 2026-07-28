@@ -7,7 +7,7 @@ Current milestone: **M6** of M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 Criteria at or below the current milestone are enforced: an executable one
 with no test, or a manual one with no recorded sign-off, fails the build.
 
-## In scope (50)
+## In scope (51)
 
 | Criterion | SPEC | Kind | Status | Evidence |
 |---|---|---|---|---|
@@ -19,6 +19,7 @@ with no test, or a manual one with no recorded sign-off, fails the build.
 | **SR-C6** — SpecReport.Capture declares no package dependency beyond Reqnroll and the BCL. | 3.5 | executable | proven | `M0Criteria.CaptureDeclaresNoDependencyBeyondReqnroll` |
 | **SR-C7** — With no screenshot provider registered, capture takes no screenshots and raises no error. | 3.5 | executable | proven | `M4Criteria.WithNoProviderRegisteredNothingIsCapturedAndNothingComplains` |
 | **SR-C8** — The Capture assembly file name ends in .ReqnrollPlugin.dll so Reqnroll auto-loads it. | 3.5 | executable | proven | `M0Criteria.CaptureAssemblyNameEndsWithReqnrollPlugin` |
+| **SR-C9** — A screenshot renders against the step that produced it, not the step Reqnroll's attachment stamping names. | 3.4 | executable | proven | `M4Criteria.ScreenshotsRenderAgainstTheStepThatProducedThem` |
 | **SR-F1** — Fixture #1 is real Reqnroll output covering every case the M0 milestone lists. | 10 | executable | proven | `M0Criteria.FixtureCoversEveryCaseM0Requires` |
 | **SR-F2** — The sample suite fails exactly the scenarios it intends to fail - no accidental failures. | 10 | executable | proven | `M0Criteria.SampleFailsExactlyTheScenariosItIntendsTo` |
 | **SR-H1** — HTTP exchanges attribute to the correct step under 4-way parallel async execution. | 3.4 | executable | proven | `M1Criteria.EveryStepScopedExchangeLandsOnTheStepThatMadeIt` |

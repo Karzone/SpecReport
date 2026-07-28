@@ -361,6 +361,21 @@ Stated plainly, so you meet them here rather than later:
 - **No expected-vs-actual diffs** — the raw failure message is shown rather than parsed, because
   parsing it reliably means special-casing every assertion library.
 
+## See it working
+
+[`samples/FullStackSample`](samples/FullStackSample) is a single Reqnroll suite with **both**
+Playwright browser tests and API tests (HttpClient *and* RestSharp), running against a real
+in-process app — so one report carries screenshots and HTTP panels side by side, including three
+scenarios that do both in a single timeline.
+
+```bash
+dotnet test samples/FullStackSample
+specreport samples/FullStackSample/bin/Debug/net10.0/fullstack-messages.ndjson -o report.html --open
+```
+
+Everything runs offline. Three of the fifteen scenarios fail deliberately, because a report
+where nothing fails demonstrates almost nothing.
+
 ## How it fits together
 
 | Package | Role |

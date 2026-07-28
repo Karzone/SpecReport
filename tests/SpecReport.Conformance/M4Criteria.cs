@@ -116,6 +116,45 @@ public sealed class M4Criteria : IDisposable
         Assert.Contains("driver is gone", threw.Skipped!, StringComparison.Ordinal);
     }
 
+    [Fact]
+    [Criterion("SR-C9")]
+    public void ScreenshotsRenderAgainstTheStepThatProducedThem()
+    {
+        // fullstack-run-06 has two deliberately failing scenarios, each with a browser open, so
+        // on-failure capture fires on the LAST step of each.
+        var path = Path.Combine(RepoLayout.FixturesDir, "fullstack-run-06.ndjson");
+        var run = RunParser.Parse(path, _spool);
+
+        var withShots = run.AllScenarios
+            .Select(s => new
+            {
+                s.Name,
+                Steps = (s.Outcome?.Steps ?? []).Where(st => st.Kind == StepKind.Gherkin).ToList()
+            })
+            .Select(x => new
+            {
+                x.Name,
+                Shot = x.Steps.FirstOrDefault(st => st.Evidence.Any(e => e.Kind == EvidenceKind.Screenshot)),
+                Failed = x.Steps.FirstOrDefault(st => st.Status == StepStatus.Failed)
+            })
+            .Where(x => x.Shot is not null)
+            .ToList();
+
+        Assert.NotEmpty(withShots);
+
+        foreach (var entry in withShots)
+        {
+            Assert.NotNull(entry.Failed);
+
+            // The screenshot belongs on the step that failed. Before the fix it landed on step
+            // 1 every time, because Reqnroll stamps an [AfterStep] attachment with the
+            // AFTER_TEST_STEP hook's id rather than the Gherkin step's (api-notes §10).
+            Assert.True(ReferenceEquals(entry.Shot, entry.Failed),
+                $"In '{entry.Name}' the screenshot rendered against '{entry.Shot!.Text}' but the " +
+                $"step that failed was '{entry.Failed!.Text}'.");
+        }
+    }
+
     // ---- redaction -----------------------------------------------------------------------------
 
     [Fact]

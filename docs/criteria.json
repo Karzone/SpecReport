@@ -155,6 +155,10 @@
       "statement": "With no screenshot provider registered, capture takes no screenshots and raises no error."
     },
     {
+      "id": "SR-C9", "spec": "3.4", "kind": "executable", "milestone": "M4",
+      "statement": "A screenshot renders against the step that produced it, not the step Reqnroll's attachment stamping names."
+    },
+    {
       "id": "SR-S1", "spec": "8", "kind": "executable", "milestone": "M4",
       "statement": "Sensitive request/response headers are redacted at capture time."
     },

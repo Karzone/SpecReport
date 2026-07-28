@@ -455,3 +455,33 @@ details.run-detail header h1 { font-size: 18px; }
 
 .empty { color: var(--muted); text-align: center; padding: 40px 0; }
 footer { color: var(--muted); font-size: 12px; text-align: center; margin-top: 36px; }
+
+/* ---- print ------------------------------------------------------------------------------
+   Reports get printed and PDF'd for sign-off, and the default output is poor: controls that do
+   nothing on paper, collapsed sections hiding the failures, and dark backgrounds emptying the
+   toner. Force the light palette, open everything, and keep scenarios off page breaks. */
+@media print {
+  :root, :root[data-theme="dark"], :root[data-theme="light"] {
+    --bg: #fff; --surface: #fff; --surface-2: #f4f5f8; --border: #ccd2de;
+    --text: #000; --muted: #444c5c;
+  }
+
+  body { font-size: 11pt; }
+  .wrap { max-width: none; padding: 0; }
+
+  /* Interactive chrome has no meaning on paper. */
+  .controls, .lightbox, #toggle-all, #theme { display: none !important; }
+
+  .summary { box-shadow: none; break-inside: avoid; }
+  .scenario { box-shadow: none; break-inside: avoid; page-break-inside: avoid; }
+  .feature { break-inside: auto; }
+  .http, table.dt, pre { break-inside: avoid; }
+
+  /* A collapsed report prints as a list of titles - useless as a record. */
+  details { display: block !important; }
+  details > .body, details > .step-detail { display: block !important; }
+  summary { list-style: none; }
+
+  a { text-decoration: none; color: inherit; }
+  .shots img { max-width: 320px; }
+}
