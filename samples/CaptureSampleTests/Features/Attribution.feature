@@ -26,3 +26,25 @@ Feature: HTTP capture attributes to the right step
   Scenario: Secrets are redacted before they reach the NDJSON
     Given step redact-a makes a call carrying secrets
     Then the call should have completed
+
+  @secrets
+  Scenario: Secrets nested deep inside a JSON body are redacted
+    Given step redact-b posts a deeply nested secret
+    Then the call should have completed
+
+  @limits
+  Scenario: An oversized body is truncated with a visible marker
+    Given step limit-a receives a body larger than the cap
+    Then the call should have completed
+
+  @ui
+  Scenario: A screenshot is captured when a provider is registered
+    Given a screenshot provider is registered
+    When step shot-a makes a call
+    Then the step fails on purpose
+
+  @ui-none
+  Scenario: No provider registered means no screenshots and no error
+    Given no screenshot provider is registered
+    When step noshot-a makes a call
+    Then the step fails on purpose

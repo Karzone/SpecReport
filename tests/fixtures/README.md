@@ -68,7 +68,7 @@ commit message.
 | Source | `samples/CaptureSampleTests` (consumes `SpecReport.Capture`) |
 | Recorded | 2026-07-28 |
 | Size | ~145 KB, 417 lines |
-| Outcome | 9 scenarios, all passing, 42 captured HTTP exchanges |
+| Outcome | 13 scenarios (2 fail deliberately so on-failure screenshots fire), 50 HTTP exchanges + 1 screenshot |
 
 Proof fixture for M1 (SR-H1/SR-H2). Eight scenarios run concurrently under MSTest
 method-level parallelism, each making four async calls plus one from a `BeforeScenario`
@@ -79,6 +79,11 @@ ground truth: 33 step-scoped exchanges whose `stepText` must match their URL tok
 It also plants two real secrets (a bearer token and an `api_key` query parameter) plus a
 `Set-Cookie` response header, so redaction can be proven by their **absence** rather than by
 grepping for the word "redacted".
+
+Extended at M4 with: a secret nested four levels deep under innocuous parents (and inside an
+array element), a 200 KB response body against the 64 KB cap, and two scenarios that differ only
+in whether a screenshot provider is registered - the pair that proves `no provider` is a normal
+state producing neither screenshots nor complaints.
 
 ---
 

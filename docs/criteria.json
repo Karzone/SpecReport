@@ -14,7 +14,7 @@
     "Every `spec` value must match a real section heading in SPEC.md - a meta-test checks it."
   ],
 
-  "currentMilestone": "M3",
+  "currentMilestone": "M4",
   "milestones": ["M0", "M1", "M2", "M3", "M4", "M5", "M6"],
 
   "criteria": [
@@ -176,7 +176,8 @@
     },
     {
       "id": "SR-S6", "spec": "8", "kind": "executable", "milestone": "M4",
-      "statement": "Screenshots are re-encoded to bounded JPEG before attachment."
+      "statement": "Screenshot payloads are size-bounded: oversized screenshots are dropped with a stated reason rather than inflating the NDJSON.",
+      "revisedNote": "Was 're-encoded to bounded JPEG'. Re-encoding needs an imaging library, and SPEC 3.5 forbids SpecReport.Capture any dependency beyond Reqnroll - a rule that exists so a browser or codec is never forced on an API-only consumer. The problem the criterion protects against is unbounded NDJSON growth, and a byte budget at the boundary solves that without the dependency. The provider contract documents returning compressed bytes (JPEG quality ~40); Playwright supports this natively. Revised 2026-07-28 during M4, reasoning in SPEC 8.4."
     },
     {
       "id": "SR-S7", "spec": "8", "kind": "executable", "milestone": "M4",

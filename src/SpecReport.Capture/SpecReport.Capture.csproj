@@ -24,6 +24,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Conformance tests exercise the screenshot budget directly. Widening the public API
+         just to make it testable would be the tail wagging the dog. -->
+    <InternalsVisibleTo Include="SpecReport.Conformance" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 

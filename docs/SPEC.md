@@ -462,10 +462,20 @@ Hard requirements, not polish.
 3. **Body capture is size-capped** (default 64 KB per body) with explicit truncation markers:
    `… truncated, 1.2 MB total`.
 4. **Screenshots are opt-in twice over** — they require a registered provider (§3.5) *and*
-   default to on-failure-only — and are **re-encoded to bounded JPEG** at
-   capture time (configurable quality ≈40, max dimension cap) — Reqnroll inlines every
-   attachment byte into the NDJSON as base64 with no size cap and no external option
-   (verified), so unbounded PNGs would produce 100+ MB artifacts.
+   default to on-failure-only — and their payload is **size-bounded**: a screenshot over the
+   budget (default 512 KB) is **dropped with a stated reason**, not attached. Reqnroll inlines
+   every attachment byte into the NDJSON as base64 with no size cap and no external option
+   (verified), so an unbounded PNG stream produces a 100+ MB archived artifact.
+
+   *Revised at M4.* This previously read "re-encoded to bounded JPEG at capture time".
+   Re-encoding requires an imaging library, and §3.5 forbids `SpecReport.Capture` any
+   dependency beyond Reqnroll — the rule exists precisely so a codec is never forced on an
+   API-only consumer. Since the problem being solved is unbounded NDJSON growth, a byte budget
+   enforced at the boundary solves it without the dependency. The provider contract documents
+   returning already-compressed bytes, which Playwright supports natively
+   (`Type = Jpeg, Quality = 40`); Selenium yields PNG, so Selenium users either raise the
+   budget or downscale in their own provider. Stating that plainly is better than a criterion
+   we cannot meet.
 5. **The HTML makes zero network requests.** No CDN, no fonts, no telemetry. Must render
    identically from `file://` on a locked-down machine.
 6. **All run data is injected as an escaped JSON data island** — a scenario named

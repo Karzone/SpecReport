@@ -145,6 +145,15 @@ public sealed class SpecReportHttpHandler : DelegatingHandler
         var truncated = bytes.Length > _options.MaxBodyBytes;
         var text = Encoding.UTF8.GetString(bytes, 0, truncated ? _options.MaxBodyBytes : bytes.Length);
 
+        // Redact BEFORE the text reaches the exchange. A login response whose body is a raw
+        // JWT is the most common API test there is, and the NDJSON gets archived as a CI
+        // artifact - a secret that reaches the file has already leaked (SPEC §8.1).
+        if (_options.RedactJsonBodies && LooksLikeJson(text))
+        {
+            text = JsonRedactor.Redact(
+                text, isRequest ? "request" : "response", _options, exchange.Redactions);
+        }
+
         if (_options.BodyScrubber != null)
             text = _options.BodyScrubber(text);
 
@@ -160,5 +169,18 @@ public sealed class SpecReportHttpHandler : DelegatingHandler
             exchange.ResponseBodyTruncated = truncated;
             exchange.ResponseBodyBytes = bytes.Length;
         }
+    }
+
+    /// <summary>Cheap shape check - running the redactor over a JPEG would be pointless work.</summary>
+    private static bool LooksLikeJson(string text)
+    {
+        for (var i = 0; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (char.IsWhiteSpace(c)) continue;
+            return c == '{' || c == '[';
+        }
+
+        return false;
     }
 }

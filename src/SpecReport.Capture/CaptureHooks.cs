@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Reqnroll;
 
 namespace SpecReport.Capture;
@@ -75,10 +77,42 @@ public sealed class CaptureHooks
     /// next, which is precisely the misattribution SR-H2 forbids.
     /// </summary>
     [AfterStep]
-    public void AttachStepExchanges()
+    public async Task AttachStepEvidence()
     {
         Attach(_capture.Buffer.Drain(ExchangeScope.Step));
+        await AttachScreenshotAsync().ConfigureAwait(false);
         _capture.Buffer.LeaveStep();
+    }
+
+    /// <summary>
+    /// Captures a screenshot if the consumer registered a provider and the mode calls for one.
+    ///
+    /// Async is fine HERE - unlike <see cref="BeginScenario"/>, nothing about this depends on
+    /// AsyncLocal flow. The buffer is reached through the injected ScenarioCapture instance.
+    /// </summary>
+    private async Task AttachScreenshotAsync()
+    {
+        var options = _capture.Options.Screenshots;
+        if (options.Mode == ScreenshotMode.Off) return;
+
+        var failed = _scenario.StepContext?.Status == ScenarioExecutionStatus.TestError;
+        if (options.Mode == ScreenshotMode.OnFailure && !failed) return;
+
+        var result = await ScreenshotResult
+            .TryCaptureAsync(_capture.ScreenshotProvider, options, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        if (result.Bytes is { } bytes)
+        {
+            _output.AddAttachment(WriteBytes(bytes, options.FileExtension));
+            return;
+        }
+
+        // "No provider" is the normal state for an API suite - silence is correct. Anything
+        // else is worth a line in the report, because a missing screenshot on a failed step is
+        // otherwise indistinguishable from one nobody asked for.
+        if (result.Skipped is { } why && why != "no provider")
+            _output.WriteLine($"[SpecReport] {why}");
     }
 
     /// <summary>
@@ -107,12 +141,24 @@ public sealed class CaptureHooks
     /// </summary>
     private string WriteToTempFile(HttpExchange exchange)
     {
-        var dir = Path.Combine(Path.GetTempPath(), "specreport-capture", _capture.Id);
-        Directory.CreateDirectory(dir);
-
-        var path = Path.Combine(dir, "http-" + exchange.Sequence.ToString("D4") + ".json");
+        var path = Path.Combine(ScratchDirectory(), "http-" + exchange.Sequence.ToString("D4") + ".json");
         File.WriteAllText(path, exchange.ToJson());
         return path;
+    }
+
+    private string WriteBytes(byte[] bytes, string extension)
+    {
+        var name = "shot-" + System.Guid.NewGuid().ToString("N").Substring(0, 8) + extension;
+        var path = Path.Combine(ScratchDirectory(), name);
+        File.WriteAllBytes(path, bytes);
+        return path;
+    }
+
+    private string ScratchDirectory()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "specreport-capture", _capture.Id);
+        Directory.CreateDirectory(dir);
+        return dir;
     }
 }
 
@@ -128,6 +174,25 @@ public sealed class ScenarioCapture
     /// <summary>Unique per scenario instance; used to keep temp files from colliding between
     /// concurrently running scenarios.</summary>
     public string Id { get; } = System.Guid.NewGuid().ToString("N");
+
+    public CaptureOptions Options { get; private set; } = CaptureOptions.Default;
+
+    internal ScreenshotProvider? ScreenshotProvider { get; private set; }
+
+    /// <summary>
+    /// Registers how to take a screenshot. Call from a scenario hook, passing whatever your
+    /// driver offers - SpecReport never references one itself (SPEC §3.5).
+    ///
+    /// Not calling this is a perfectly normal state: an API suite takes no screenshots, and
+    /// that produces no error and no warning.
+    /// </summary>
+    public void UseScreenshotProvider(ScreenshotProvider provider) =>
+        ScreenshotProvider = provider ?? throw new System.ArgumentNullException(nameof(provider));
+
+    /// <summary>Overrides capture settings for this scenario - redaction lists, body caps,
+    /// screenshot mode.</summary>
+    public void UseOptions(CaptureOptions options) =>
+        Options = options ?? throw new System.ArgumentNullException(nameof(options));
 
     private int _stepIndex = -1;
 

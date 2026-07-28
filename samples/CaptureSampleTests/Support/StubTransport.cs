@@ -21,11 +21,20 @@ public sealed class StubTransport : HttpMessageHandler
         await Task.Delay(delay, cancellationToken);
         await Task.Yield();
 
+        // ?bulk=N asks for an oversized body, so body truncation is exercised end to end.
+        var query = request.RequestUri!.Query;
+        var bulk = 0;
+        var marker = query.IndexOf("bulk=", StringComparison.Ordinal);
+        if (marker >= 0) int.TryParse(query[(marker + 5)..].Split('&')[0], out bulk);
+
+        var body = bulk > 0
+            ? $$"""{"path":"{{request.RequestUri.AbsolutePath}}","filler":"{{new string('x', bulk)}}"}"""
+            : $$"""{"path":"{{request.RequestUri.AbsolutePath}}","ok":true}""";
+
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
             RequestMessage = request,
-            Content = new StringContent(
-                $$"""{"path":"{{request.RequestUri!.AbsolutePath}}","ok":true}""")
+            Content = new StringContent(body)
         };
 
         // A response header that must be redacted before it lands in the NDJSON.

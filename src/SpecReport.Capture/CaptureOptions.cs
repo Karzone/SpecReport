@@ -55,5 +55,13 @@ public sealed class CaptureOptions
     /// </summary>
     public Func<string, string>? BodyScrubber { get; set; }
 
+    /// <summary>
+    /// Redact sensitive keys inside JSON bodies, at any depth. On by default: the single most
+    /// common API test is "POST /login, assert 200", whose response body IS the token.
+    /// </summary>
+    public bool RedactJsonBodies { get; set; } = true;
+
+    public ScreenshotOptions Screenshots { get; } = new();
+
     public static CaptureOptions Default { get; } = new CaptureOptions();
 }
