@@ -2,6 +2,9 @@
   <Folder Name="/samples/">
     <Project Path="samples/SampleTests/SampleTests.csproj" />
   </Folder>
+  <Folder Name="/spikes/">
+    <Project Path="spikes/M1.HttpAttribution/M1.HttpAttribution.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/SpecReport.Capture/SpecReport.Capture.csproj" />
     <Project Path="src/SpecReport.Cli/SpecReport.Cli.csproj" />

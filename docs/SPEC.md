@@ -162,10 +162,31 @@ worse than no tool at all. So:
    `ScenarioContext`) drains everything buffered since the previous drain and attaches it —
    Reqnroll stamps the current `testStepId` automatically (verified). In-step ordering is by
    capture sequence.
-3. **The ambient handle is scenario-scoped and holder-based.** The buffer is registered in
-   Reqnroll's scenario DI container; the handler reaches it through an `AsyncLocal` holding a
-   **mutable holder object** seeded once per scenario — the holder's contents change, the
-   `AsyncLocal.Value` is never reassigned mid-flow.
+3. **How the handler finds its buffer — settled by measurement, not reasoning** (M1 spike,
+   `spikes/M1.HttpAttribution/FINDINGS.md`; 32 observations × 5 runs under 8-way parallelism):
+
+   | Mechanism | Result |
+   |---|---|
+   | `AsyncLocal` seeded in an **async** hook | ABSENT 32/32 — the copy-on-write trap is real |
+   | `AsyncLocal<Holder>` (mutable holder) in an async hook | ABSENT 32/32 — the reference is lost too |
+   | `[ThreadStatic]` | **6–20 WRONG per run** — returns *another scenario's* value |
+   | `AsyncLocal` seeded in a **synchronous** hook | CORRECT 32/32, every run |
+   | Handler constructed **per scenario** with the buffer | CORRECT 32/32, every run |
+
+   So v1 ships the two that work:
+   - **Explicit construction is primary.** The handler is built per scenario holding its buffer
+     directly — no ambient lookup, correct by construction.
+   - **Sync-hook `AsyncLocal` is the ambient fallback**, for `IHttpClientFactory` consumers
+     whose clients are built once at startup rather than per scenario. **The seeding hook must
+     be synchronous** — that is a correctness requirement, not a style preference, and it needs
+     a guard test because a future refactor to `async Task` would break it silently.
+
+   `[ThreadStatic]` and any other thread-affine state are **forbidden here**. They don't merely
+   lose the value, they attribute one scenario's traffic to another — a plausible-looking report
+   that is quietly wrong, with a different wrong split on every run.
+
+   The mutable-holder design from the previous revision is **dropped**: it solved a problem that
+   doesn't exist and failed at the one that does.
 4. **Nothing is dropped, nothing is misattributed.** Exchanges left in the buffer at scenario
    end (made in `BeforeScenario`/`AfterScenario` hooks, background polling) drain into a
    labelled **"outside steps"** bucket rendered at scenario level.
