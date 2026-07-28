@@ -1,0 +1,23 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+artifacts/
+
+## Rider / VS Code
+.idea/
+.vscode/
+
+## Test + report output
+TestResults/
+*.trx
+*.ndjson
+!tests/fixtures/**/*.ndjson
+reqlens-report.html
+*_files/
+
+## OS
+Thumbs.db
+.DS_Store
