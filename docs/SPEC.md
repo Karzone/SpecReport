@@ -158,10 +158,17 @@ worse than no tool at all. So:
 
 1. **Capture and attribution are decoupled.** The handler only appends completed exchanges to
    a scenario-scoped, thread-safe buffer. It never asks "what step is this?"
-2. **Attribution happens at step boundaries.** Capture's `[AfterStep]` hook (which *does* have
-   `ScenarioContext`) drains everything buffered since the previous drain and attaches it —
-   Reqnroll stamps the current `testStepId` automatically (verified). In-step ordering is by
-   capture sequence.
+2. **Attribution happens at step boundaries, and the evidence carries its own step identity.**
+   `[BeforeStep]` opens a step window recording the step's index and text; every exchange
+   appended while it is open is stamped with them; `[AfterStep]` drains and attaches.
+
+   The payload's `stepIndex`/`stepText` — **not** the attachment's `testStepId` — is what the
+   report joins on. Measured (api-notes §10): an attachment added from an `[AfterStep]` hook is
+   stamped with the `AFTER_TEST_STEP` *hook's* step id, and every exchange in a scenario ended
+   up sharing one such id. Relying on Reqnroll's stamping would have collapsed all of a
+   scenario's HTTP evidence onto a single row. Attribution is therefore ours and deterministic.
+
+   In-step ordering is by capture sequence.
 3. **How the handler finds its buffer — settled by measurement, not reasoning** (M1 spike,
    `spikes/M1.HttpAttribution/FINDINGS.md`; 32 observations × 5 runs under 8-way parallelism):
 

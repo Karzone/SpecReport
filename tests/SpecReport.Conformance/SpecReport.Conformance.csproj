@@ -12,4 +12,10 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- SR-H3 inspects CaptureHooks by reflection. A direct reference brings Reqnroll along
+         transitively; Assembly.LoadFrom on the built dll cannot resolve it. -->
+    <ProjectReference Include="../../src/SpecReport.Capture/SpecReport.Capture.csproj" />
+  </ItemGroup>
+
 </Project>

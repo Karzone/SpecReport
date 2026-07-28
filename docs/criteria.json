@@ -14,7 +14,7 @@
     "Every `spec` value must match a real section heading in SPEC.md - a meta-test checks it."
   ],
 
-  "currentMilestone": "M0",
+  "currentMilestone": "M1",
   "milestones": ["M0", "M1", "M2", "M3", "M4", "M5", "M6"],
 
   "criteria": [
@@ -42,6 +42,10 @@
     {
       "id": "SR-H2", "spec": "3.4", "kind": "executable", "milestone": "M1",
       "statement": "Exchanges made outside any step land in the labelled 'outside steps' bucket, never dropped and never misattributed."
+    },
+    {
+      "id": "SR-H3", "spec": "3.4", "kind": "executable", "milestone": "M1",
+      "statement": "The CaptureScope seeding hook is synchronous - an async hook silently disables ambient capture."
     },
 
     {

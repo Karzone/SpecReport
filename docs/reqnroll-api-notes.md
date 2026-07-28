@@ -165,6 +165,37 @@ Everything above was read from docs and source. Everything below was **measured*
   are per-feature Gherkin artifacts from code generation, *not* the runtime stream. Don't
   confuse them with the formatter output; `.gitignore` excludes them.
 
+## 10. Attachments added from an `[AfterStep]` hook cannot identify the step (M1, measured)
+
+**This invalidated a load-bearing assumption in SPEC §3.4 and was only found by checking the
+recorded bytes.**
+
+§3 above establishes that Reqnroll stamps attachments with the *current* step id. True — but
+"current" during an `[AfterStep]` hook is **the hook's own step**, not the Gherkin step that
+just finished:
+
+- Reqnroll emits `BEFORE_TEST_STEP` / `AFTER_TEST_STEP` hook envelopes (absent from fixture-01,
+  which had no step hooks — hence the earlier gap in these notes).
+- `testCase.testSteps[]` interleaves them with Gherkin steps:
+  `[beforeCase hook, beforeStep hook, PICKLE STEP, afterStep hook, beforeStep hook, …]`.
+- An attachment added from `[AfterStep]` is stamped with an `AFTER_TEST_STEP` entry, whose
+  `pickleStepId` is empty. Worse, in the measured run **all four exchanges in a scenario shared
+  a single such id** — so `testStepId` cannot distinguish which Gherkin step produced them.
+
+**Consequence:** evidence captured after a step must carry **its own step identity**.
+`SpecReport.Capture` stamps every exchange with `stepIndex` (a per-scenario counter incremented
+in `[BeforeStep]`) and `stepText`, at capture time. Attribution is then ours and deterministic,
+independent of a Reqnroll internal we don't control.
+
+`StepInfo.PickleStepId` is `internal` (§6), so joining to the message stream by id isn't
+available to third-party code anyway — the index/text pair is the practical alternative.
+
+### Related: `ScenarioStepContext` is not constructor-injectable
+Injecting it into a binding class throws
+`ObjectContainerException: Primitive types or structs cannot be resolved:
+Reqnroll.Bindings.StepDefinitionType (… ScenarioStepContext → StepInfo)`.
+Inject `ScenarioContext` and read `scenario.StepContext?.StepInfo?.Text` instead.
+
 ## 9. Environment gotcha
 
 `InvariantGlobalization=true` **breaks Reqnroll at startup**:

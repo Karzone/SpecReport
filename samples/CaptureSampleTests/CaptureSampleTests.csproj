@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.10.3" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.10.3" />
+    <PackageReference Include="Reqnroll.MsTest" Version="3.3.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Consumes Capture exactly as a real consumer would: a plain reference, no config.
+         If the plugin's auto-registration regresses, this sample stops producing evidence. -->
+    <ProjectReference Include="../../src/SpecReport.Capture/SpecReport.Capture.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="reqnroll.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

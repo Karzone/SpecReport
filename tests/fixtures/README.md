@@ -58,3 +58,24 @@ commit message.
 - A **parallel** run — to confirm whether `testCaseStarted.workerId` gets populated.
 - A **synthetic 5k-scenario** stream — SPEC §8.7 scale budget.
 - A **sharded** pair of streams — SPEC §6.1 directory-as-one-run merging.
+
+---
+
+## capture-run-02.ndjson
+
+| | |
+|---|---|
+| Source | `samples/CaptureSampleTests` (consumes `SpecReport.Capture`) |
+| Recorded | 2026-07-28 |
+| Size | ~145 KB, 417 lines |
+| Outcome | 9 scenarios, all passing, 42 captured HTTP exchanges |
+
+Proof fixture for M1 (SR-H1/SR-H2). Eight scenarios run concurrently under MSTest
+method-level parallelism, each making four async calls plus one from a `BeforeScenario`
+hook. **Every request URL encodes the step it was made from**, so the fixture carries its own
+ground truth: 33 step-scoped exchanges whose `stepText` must match their URL token, and 9
+`outside-steps` exchanges that must never be attributed to a Gherkin step.
+
+It also plants two real secrets (a bearer token and an `api_key` query parameter) plus a
+`Set-Cookie` response header, so redaction can be proven by their **absence** rather than by
+grepping for the word "redacted".
