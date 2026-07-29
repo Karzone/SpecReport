@@ -279,8 +279,13 @@ internal static class HtmlBuilder
         if (scenario.FlakyWithinRun)
             sb.Append("<span class=\"flaky\" title=\"Failed then passed within this run\">&#8635; flaky</span>");
 
+        // The @ is added by CSS, so it can be dimmed independently of the tag word.
         foreach (var tag in scenario.Tags)
-            sb.Append("<span class=\"tag\">@").Append(E(tag)).Append("</span>");
+        {
+            sb.Append("<span class=\"tag");
+            if (IsExpectedFailureTag(tag)) sb.Append(" expected");
+            sb.Append("\">").Append(E(tag)).Append("</span>");
+        }
 
         if (scenario.Status == "failed" && scenario.FailureSummary is { Length: > 0 } why)
             sb.Append("<span class=\"why\">").Append(E(why)).Append("</span>");
@@ -538,6 +543,18 @@ internal static class HtmlBuilder
 
         sb.Append("</div>");
     }
+
+    /// <summary>
+    /// Tags teams conventionally use to mark a failure as expected. Highlighting them stops a
+    /// deliberate failure reading as a real one at a glance - which matters most in exactly the
+    /// reports where several scenarios are red.
+    /// </summary>
+    private static bool IsExpectedFailureTag(string tag) =>
+        tag.Equals("known-fail", StringComparison.OrdinalIgnoreCase) ||
+        tag.Equals("known-failure", StringComparison.OrdinalIgnoreCase) ||
+        tag.Equals("expected-failure", StringComparison.OrdinalIgnoreCase) ||
+        tag.Equals("wip", StringComparison.OrdinalIgnoreCase) ||
+        tag.Equals("ignore", StringComparison.OrdinalIgnoreCase);
 
     private static string Glyph(string status) => status switch
     {

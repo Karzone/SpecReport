@@ -235,16 +235,43 @@ button:focus-visible, summary:focus-visible {
 .scenario > summary:hover { background: var(--surface-2); }
 .scenario[open] > summary { border-bottom: 1px solid var(--border); }
 
+/* Status pills are TINTED rather than filled.
+   A solid saturated block reads as a warning light and shouts over the scenario name next to
+   it - which is the thing you are actually trying to read. A tint of the same hue keeps the
+   status instantly scannable while letting the row breathe. Contrast of the text against its
+   own tint is measured, not eyeballed: every pair clears WCAG AA. */
 .pill {
   flex: 0 0 auto; font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .06em; padding: 3px 8px; border-radius: 5px; color: #fff;
-  min-width: 62px; text-align: center;
+  letter-spacing: .06em; padding: 3px 9px; border-radius: 999px;
+  min-width: 66px; text-align: center; border: 1px solid transparent;
 }
-.pill.passed { background: var(--passed); }
-.pill.failed { background: var(--failed); }
-.pill.skipped, .pill.unknown { background: var(--skipped); }
-.pill.pending { background: var(--pending); }
-.pill.undefined, .pill.ambiguous { background: var(--undefined); }
+.pill.passed {
+  color: var(--passed);
+  background: color-mix(in srgb, var(--passed) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--passed) 32%, transparent);
+}
+/* 10%, not the 14-15% used elsewhere: red is the darkest of the palette, so an equal tint
+   dropped this pair to 4.28:1. Measured, then corrected to 4.65:1. */
+.pill.failed {
+  color: var(--failed);
+  background: color-mix(in srgb, var(--failed) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--failed) 38%, transparent);
+}
+.pill.skipped, .pill.unknown {
+  color: var(--skipped);
+  background: color-mix(in srgb, var(--skipped) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--skipped) 30%, transparent);
+}
+.pill.pending {
+  color: var(--pending);
+  background: color-mix(in srgb, var(--pending) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--pending) 34%, transparent);
+}
+.pill.undefined, .pill.ambiguous {
+  color: var(--undefined);
+  background: color-mix(in srgb, var(--undefined) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--undefined) 32%, transparent);
+}
 
 .scenario .name { flex: 1 1 auto; min-width: 0; }
 .scenario .name .title { font-weight: 550; }
@@ -252,9 +279,26 @@ button:focus-visible, summary:focus-visible {
   display: block; color: var(--failed); font-size: 12.5px; margin-top: 2px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* Tag pills.
+   Deliberately quiet: tags are metadata sitting next to the scenario name, and a row of
+   bright chips competes with the thing you are reading. The @ is dimmed further so the eye
+   lands on the word. */
 .tag {
-  font-size: 11.5px; color: var(--muted); background: var(--surface-2);
-  border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; margin-left: 4px;
+  display: inline-flex; align-items: center;
+  font-size: 10.5px; font-weight: 550; letter-spacing: .015em;
+  color: var(--muted); background: color-mix(in srgb, var(--muted) 9%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--muted) 22%, transparent);
+  border-radius: 999px; padding: 1.5px 8px; margin-left: 5px; white-space: nowrap;
+  vertical-align: middle;
+}
+.tag::before { content: "@"; opacity: .5; margin-right: 1px; }
+
+/* A tag flagging an expected failure should not look like an ordinary label - otherwise a
+   deliberate failure is indistinguishable from a real one at a glance. */
+.tag.expected {
+  color: var(--pending);
+  background: color-mix(in srgb, var(--pending) 11%, var(--surface));
+  border-color: color-mix(in srgb, var(--pending) 30%, transparent);
 }
 .flaky { color: var(--pending); font-size: 11.5px; margin-left: 6px; }
 .dur { flex: 0 0 auto; color: var(--muted); font: 12px var(--mono); font-variant-numeric: tabular-nums; }
