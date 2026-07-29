@@ -66,7 +66,12 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Build samples
-        run: dotnet build samples --configuration Release
+        # Named individually: `dotnet build samples` fails with MSB1003, because a directory
+        # with no project or solution file in it is not a build target.
+        run: |
+          dotnet build samples/SampleTests --configuration Release
+          dotnet build samples/CaptureSampleTests --configuration Release
+          dotnet build samples/FullStackSample --configuration Release
 
       # FullStackSample drives a real browser. Without this it builds but its UI scenarios
       # cannot run, which would leave the one sample that proves UI+API evidence together
