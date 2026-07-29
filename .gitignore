@@ -30,3 +30,7 @@ spikes/**/probe-results.txt
 
 ## Local preview output
 .preview/
+
+## Generated reports written at the repo root by ad-hoc runs
+report.html
+*_files/
