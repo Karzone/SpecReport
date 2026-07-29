@@ -65,12 +65,35 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Build samples
+        run: dotnet build samples --configuration Release
+
+      # FullStackSample drives a real browser. Without this it builds but its UI scenarios
+      # cannot run, which would leave the one sample that proves UI+API evidence together
+      # untested on every platform but a developer's laptop.
+      - name: Install Playwright browsers
+        run: pwsh samples/FullStackSample/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
       # The samples deliberately contain failing scenarios - they exist to produce realistic
       # recordings, not to go green - so the test step is expected to exit non-zero.
       - name: Run sample suites
         run: |
-          dotnet test samples/SampleTests --configuration Release || true
-          dotnet test samples/CaptureSampleTests --configuration Release || true
+          dotnet test samples/SampleTests --configuration Release --no-build || true
+          dotnet test samples/CaptureSampleTests --configuration Release --no-build || true
+          dotnet test samples/FullStackSample --configuration Release --no-build || true
+
+      # A sample that silently stops producing output would make the checks below vacuous:
+      # rendering zero reports and grepping zero files passes trivially.
+      - name: Every sample produced a recording
+        run: |
+          set -e
+          for s in SampleTests CaptureSampleTests FullStackSample; do
+            if ! find "samples/$s" -path '*/bin/*' -name '*.ndjson' | grep -q .; then
+              echo "::error::samples/$s produced no .ndjson - the message formatter is off, or the suite did not run"
+              exit 1
+            fi
+          done
+          echo "all three samples produced recordings"
 
       - name: Render reports from the freshly produced output
         run: |
