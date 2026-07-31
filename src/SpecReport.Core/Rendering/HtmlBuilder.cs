@@ -391,6 +391,47 @@ internal static class HtmlBuilder
           .Append("</span></").Append(element).Append('>');
     }
 
+    /// <summary>Longest failure message rendered whole, in lines and characters.</summary>
+    private const int InlineErrorLines = 3;
+    private const int InlineErrorChars = 400;
+
+    /// <summary>
+    /// Renders a failure message, folding everything past the first line once the message grows
+    /// long.
+    ///
+    /// Failed steps are expanded by default (SPEC §4.2), which is right for the common case of a
+    /// one-line assertion failure. It is wrong for a nested exception dump - an
+    /// AggregateException reporting three exhausted token providers runs to thousands of
+    /// characters and repeats itself - because the one line that says what actually broke ends up
+    /// buried under the repetition, and several such steps make a wall.
+    ///
+    /// The first line stays visible always, so the step still reads at a glance and SR-R3 is
+    /// unaffected; the remainder is one click away rather than gone.
+    /// </summary>
+    private static void ErrorMessage(StringBuilder sb, string message)
+    {
+        var lines = message.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+
+        // Short messages read better whole - folding a two-line assertion failure costs a click
+        // and hides nothing worth hiding.
+        if (lines.Length <= InlineErrorLines && message.Length <= InlineErrorChars)
+        {
+            sb.Append(E(message));
+            return;
+        }
+
+        sb.Append(E(lines[0]));
+
+        var rest = string.Join('\n', lines[1..]).TrimEnd();
+        if (rest.Length == 0) return;
+
+        var more = lines.Length - 1;
+        sb.Append("<details class=\"more\"><summary>")
+          .Append(more.ToString(CultureInfo.InvariantCulture))
+          .Append(more == 1 ? " more line" : " more lines")
+          .Append("</summary><pre>").Append(E(rest)).Append("</pre></details>");
+    }
+
     private static void StepDetail(StringBuilder sb, StepView step)
     {
         if (step.ErrorMessage is { Length: > 0 })
@@ -398,7 +439,7 @@ internal static class HtmlBuilder
             sb.Append("<div class=\"err\">");
             if (step.ErrorType is { Length: > 0 })
                 sb.Append("<span class=\"type\">").Append(E(step.ErrorType)).Append(": </span>");
-            sb.Append(E(step.ErrorMessage));
+            ErrorMessage(sb, step.ErrorMessage);
 
             if (step.ErrorStack is { Length: > 0 })
             {
